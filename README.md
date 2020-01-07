@@ -21,3 +21,6 @@ Vous trouverez dans ce README les sections suivantes :
 - **Mode de fonctionnement de notre projet :** Cette section va décrire le mode de fonctionnement de notre système et la marche à suivre afin qu'un utilisateur quelconque utilise la caméra IP avec la RPI3
 
 
+## Compilation de v4l2grab
+commenter dans config.h.in la ligne #undef malloc (car sinon veut utiliser rpl_malloc mais n'existe pas pour l'os utilisé dans rasp)
+configuration pour utiliser le compilateur arm-linux-gcc avec autotools pour compiler pour la rasberry pi (host) : ./configure CC=./../buildroot-precompiled-2017.08/output/host/usr/bin/arm-linux-gcc --host=arm-linux
