@@ -1,7 +1,7 @@
 
 
 
-**Compte-Rendu : projet sur Raspberry pi 3**
+**Compte-Rendu : TP sur Raspberry pi 3**
 ===========================================
 
 ## Partie 1 : Construction d'un OS avec Buildroot et une chaine de cross-compilation
