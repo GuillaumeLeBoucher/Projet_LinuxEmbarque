@@ -1,0 +1,5 @@
+*.pyc
+*.swap
+*.o
+*.out
+serveur
