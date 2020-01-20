@@ -1,5 +1,5 @@
 *.pyc
-*.swap
+*.swp
 *.o
 *.out
 serveur
