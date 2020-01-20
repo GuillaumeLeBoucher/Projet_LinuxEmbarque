@@ -1,11 +1,7 @@
 import socket
 
-<<<<<<< HEAD
 UDP_IP = "127.0.0.1"
-=======
 
-UDP_IP = "localhost"
->>>>>>> 1a16b6fab2505b16435c19ee6b2a3806995344a0
 UDP_PORT = 5005
 MESSAGE = "Hello, World!"
 
