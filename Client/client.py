@@ -1,11 +1,6 @@
 import socket
 
-<<<<<<< HEAD
 UDP_IP = "127.0.0.1"
-=======
-
-UDP_IP = "localhost"
->>>>>>> 1a16b6fab2505b16435c19ee6b2a3806995344a0
 UDP_PORT = 5005
 MESSAGE = "Hello, World!"
 
@@ -13,6 +8,24 @@ print("UDP target IP: ", UDP_IP)
 print ("UDP target PORT: ", UDP_PORT)
 print ("Message to send: ", MESSAGE)
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
-messageByte = MESSAGE.encode()
-sock.sendto(messageByte, (UDP_IP, UDP_PORT))
+monSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+
+while True:
+ 
+        # saisie de la requête au clavier et suppression des espaces des 2 côtés
+        requete = input('?: ').strip()
+ 
+        # test d'arrêt
+        if requete=="":
+            break
+         # envoi de la requête au serveur
+        monSocket.sendto("%s" % requete, (UDP_IP, UDP_PORT))
+ 
+        # réception et affichage de la réponse
+        reponse, adr = monSocket.recvfrom(buf)
+        print ("=> %s" % reponse)
+ 
+    # fermeture de la connexion
+monSocket.close()
+print ("fin du client UDP")
+# messageByte = MESSAGE.encode()
