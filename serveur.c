@@ -1,60 +1,104 @@
-// Server side implementation of UDP client-server model 
-// source from https://www.geeksforgeeks.org/udp-server-client-implementation-c/
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <unistd.h> 
-#include <string.h> 
-#include <sys/types.h> 
-#include <sys/socket.h> 
-#include <arpa/inet.h> 
-#include <netinet/in.h> 
+#include <stdio.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#define MAX 80
+#define PORT 8080
+#define SA struct sockaddr
 
-#define PORT	5005 
-#define MAXLINE 1024 
 
-// Driver code 
-int main() { 
-	int sockfd; 
-	char buffer[MAXLINE]; 
-	char *hello = "Hello from server"; 
+int app(int sockfd, const struct sockaddr_in cliaddr)
+{
+	char buffr[MAX];
+        char *buffs[MAX];	
+	while(1){
+		bzero(buffr, MAX);
+		
+        	// read the message from client and copy it in buffer
+		printf("Wait msg from client...");
+
+		int len, n; 
+		len = sizeof(cliaddr);  //len is value/resuslt 
+		n = recvfrom(sockfd, (char *)buffr, MAX,  
+	        	        MSG_WAITALL, ( struct sockaddr *) &cliaddr, 
+       			        	&len); 
+
+		int num = atoi(buffr);
+		switch(num){
+			case 1:
+				printf("Take picture");
+				break;
+
+			case 2:
+				printf ("Receive picture");
+				break;
+			default :
+			
+				printf("Unknown Command");
+				break;
+		}
+		
+		// send message to client
+		
+		sendto(sockfd, (const char *)buffs, strlen(buffs),
+			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
+			len);
+	}
+}
+
+int main(int argc, char *argv[]) 
+{ 
+	int sockfd, connfd; 
 	struct sockaddr_in servaddr, cliaddr; 
-	
-	// Creating socket file descriptor 
-	if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
-		perror("socket creation failed"); 
-		exit(EXIT_FAILURE); 
+	char buffer[MAX];
+	// socket create and verification 
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0); 
+	if (sockfd == -1) { 
+		printf("socket creation failed...\n"); 
+		exit(0); 
 	} 
-	
-	memset(&servaddr, 0, sizeof(servaddr)); 
-	memset(&cliaddr, 0, sizeof(cliaddr)); 
-	
-	// Filling server information 
-	servaddr.sin_family = AF_INET; // IPv4 
-	servaddr.sin_addr.s_addr = INADDR_ANY; 
+	else
+		printf("Socket successfully created..\n"); 
+	bzero(&servaddr, sizeof(servaddr)); 
+
+	// assign IP, PORT 
+	servaddr.sin_family = AF_INET; 
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
 	servaddr.sin_port = htons(PORT); 
-	
-	// Bind the socket with the server address 
-	if ( bind(sockfd, (const struct sockaddr *)&servaddr, 
-			sizeof(servaddr)) < 0 ) 
-	{ 
-		perror("bind failed"); 
-		exit(EXIT_FAILURE); 
+
+	// Binding newly created socket to given IP and verification 
+	if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) { 
+		printf("socket bind failed...\n"); 
+		exit(0); 
 	} 
-	
-	int len, n; 
+	else
+		printf("Socket successfully binded..\n"); 
 
-	len = sizeof(cliaddr); //len is value/resuslt 
 
-	n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
-				MSG_WAITALL, ( struct sockaddr *) &cliaddr, 
-				&len); 
-	buffer[n] = '\0'; 
-	printf("Client : %s\n", buffer); 
-	sendto(sockfd, (const char *)hello, strlen(hello), 
-		MSG_CONFIRM, (const struct sockaddr *) &cliaddr, 
-			len); 
-	printf("Hello message sent.\n"); 
+	int len, n;
+
+	len = sizeof(cliaddr);  //len is value/resuslt
+
+	n = recvfrom(sockfd, (char *)buffer, MAX,
+			MSG_WAITALL, ( struct sockaddr *) &cliaddr,
+			&len);
+
+	buffer[n] = '\0';
+	printf("Client : %s\n", buffer);
 	
-	return 0; 
+	char *hello = "Hello from server";
+	sendto(sockfd, (const char *)hello, strlen(hello),
+			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
+			len);
+	printf("Hello message sent.\n");
+
+
+	// Function 
+	app(sockfd, cliaddr);
+
+	return 0;
 } 
 
