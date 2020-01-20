@@ -14,7 +14,7 @@ Le groupe de projet est composé de :
 * Aurélien Grenier
 * Guillaume Le Boucher
 
-Vous trouverez dans ce README les sections suivantes : 
+Vous trouverez dans ce README les sections suivantes :
 
 - **Configuration du système :** Cette section va expliquer l'ensemble des étapes nécéssaires à la configuration de notre système. Ce dernier est composé de la RPI3 et de la caméra. On y retrouvera donc une description des étapes de configurations de l'IP statique, du flashage de la carte SD, etc.
 
@@ -22,5 +22,16 @@ Vous trouverez dans ce README les sections suivantes :
 
 
 ## Compilation de v4l2grab
+
+On utilise les Autotools pour compiler v4l2grab.
+
 commenter dans config.h.in la ligne #undef malloc (car sinon veut utiliser rpl_malloc mais n'existe pas pour l'os utilisé dans rasp)
 configuration pour utiliser le compilateur arm-linux-gcc avec autotools pour compiler pour la rasberry pi (host) : ./configure CC=./../buildroot-precompiled-2017.08/output/host/usr/bin/arm-linux-gcc --host=arm-linux
+
+
+## Discutions entre le serveur et le client : communication UDP
+  1. Le client se connecte au serveur
+  2. Le client demande une photo
+  3. Le serveur prend une photo
+  4. Le serveur envoie la taille du buffer au client
+  5. Le serveur envoie la photo au client
