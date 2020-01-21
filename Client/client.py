@@ -16,29 +16,43 @@ monSocket.sendto(requete.encode(), (UDP_IP, UDP_PORT))
 reponse, adr = monSocket.recvfrom(1024)
 print("Reponse serveur : ", reponse)
 with open('tst.jpg', 'wb') as img:
-    while True:
- 
-        # saisie de la requête au clavier et suppression des espaces des 2 côtés
-        requete = input('?: ').strip()
-        #print(requete)
-        #print(requete.encode())
-        # test d'arrêt
-        if requete=="":
+
+# saisie de la requête au clavier et suppression des espaces des 2 côtés
+    requete = input('?: ').strip()
+    #print(requete)
+    #print(requete.encode())
+    # test d'arrêt
+    # envoi de la requête au serveur
+    monSocket.sendto(requete.encode(), (UDP_IP, UDP_PORT))
+
+    # réception et affichage de la réponse
+    buf_size, adr = monSocket.recvfrom(1024)
+    print("Reponse socket")
+    print ("=> %s" % buf_size)
+
+    image, adr = monSocket.recvfrom(int(512))
+    print("Image :", image)
+    end = ""
+    truc = open("toto.txt", "wb")
+    while(end !="END FILE"):
+        requete = input('?: ')
+        if requete == "q":
             break
-         # envoi de la requête au serveur
-        monSocket.sendto(requete.encode(), (UDP_IP, UDP_PORT))
- 
-        # réception et affichage de la réponse
-        buf_size, adr = monSocket.recvfrom(1024)
-        print("Reponse socket")
-        print ("=> %s" % buf_size)
-        data = monSocket.recvfrom(int(buf_size))
-        print(data)
-        if not data:
-            break
-        img.write(data)
+        data, adr = monSocket.recvfrom(int(512))
+        try :
+            print(data.decode("utf-8"))
+            end = data.decode("utf-8")
+        except:
+            print(data)
+        truc.write(bytes(data))
+        image = image + data
+        #print("Image ajout", image)
     print ('received, yay!')
- 
+    
+    print("FIN envoie")
+    truc.close()
+    img.write(bytes(image))
+
     # fermeture de la connexion
 monSocket.close()
 
