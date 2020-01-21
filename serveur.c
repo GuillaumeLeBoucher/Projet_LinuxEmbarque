@@ -5,39 +5,83 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#define MAX 80
-#define PORT 8080
+#define MAX 1024
+#define PORT 5005
 #define SA struct sockaddr
+
+
+int sendPicture(int sockfd, const struct sockaddr_in cliaddr)
+{	
+	int len, n; 
+	printf("Fonction SEND PICTURE");
+	char *nomDuFichier = "image.jpg";
+	FILE* picture = fopen(nomDuFichier, "r");
+	printf("file desc\n");
+	fseek(picture, 0, SEEK_END);
+	int picture_size = ftell(picture);
+	fseek(picture, 0, SEEK_SET);
+	char buff[1024];
+	sprintf(buff, "%d", picture_size);	
+	
+	len = sizeof(cliaddr);  //len is value/resuslt
+	sendto(sockfd, (const char *)buff, strlen(buff),
+			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
+			len);
+	printf("Picture Size %d\n", picture_size);	
+
+	
+	char buffer[512];
+	int size_total_buffer;
+	while(! feof(picture)){
+		fread(buffer, 1, sizeof(buffer), picture);
+		printf("BUFFER %s\n", buffer);
+		sendto(sockfd, (const char *)buffer, strlen(buffer),
+				MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
+				len);
+		size_total_buffer += sizeof(buffer);
+		bzero(buffer, sizeof(buffer));
+	}
+	char *finEnvoie = "END FILE";
+	sendto(sockfd, (const char *)finEnvoie, strlen(finEnvoie),
+			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
+			len);
+	return 0;
+
+}
+
 
 
 int app(int sockfd, const struct sockaddr_in cliaddr)
 {
-	char buffr[MAX];
+	char buffr[2];
         char *buffs[MAX];	
 	while(1){
 		bzero(buffr, MAX);
 		
         	// read the message from client and copy it in buffer
-		printf("Wait msg from client...");
+		printf("Wait msg from client...\n");
 
 		int len, n; 
 		len = sizeof(cliaddr);  //len is value/resuslt 
 		n = recvfrom(sockfd, (char *)buffr, MAX,  
 	        	        MSG_WAITALL, ( struct sockaddr *) &cliaddr, 
        			        	&len); 
+		buffr[n] = '\0';
+		printf("Client : %s\n", buffr);
 
 		int num = atoi(buffr);
 		switch(num){
 			case 1:
-				printf("Take picture");
+				printf("Take picture\n");
 				break;
 
 			case 2:
-				printf ("Receive picture");
+				printf ("SEND picture\n");
+				sendPicture(sockfd, cliaddr);
 				break;
 			default :
 			
-				printf("Unknown Command");
+				printf("Unknown Command\n");
 				break;
 		}
 		
@@ -47,11 +91,12 @@ int app(int sockfd, const struct sockaddr_in cliaddr)
 			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
 			len);
 	}
+	return 0;
 }
 
 int main(int argc, char *argv[]) 
 { 
-	int sockfd, connfd; 
+	int sockfd; 
 	struct sockaddr_in servaddr, cliaddr; 
 	char buffer[MAX];
 	// socket create and verification 
@@ -88,13 +133,12 @@ int main(int argc, char *argv[])
 
 	buffer[n] = '\0';
 	printf("Client : %s\n", buffer);
-	
+
 	char *hello = "Hello from server";
 	sendto(sockfd, (const char *)hello, strlen(hello),
 			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
 			len);
 	printf("Hello message sent.\n");
-
 
 	// Function 
 	app(sockfd, cliaddr);
