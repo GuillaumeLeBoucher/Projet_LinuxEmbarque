@@ -44,3 +44,9 @@ Il faut lui passer en argument le compilateur qui va générer les exécutable a
   3. Le serveur prend une photo
   4. Le serveur envoie la taille du buffer au client
   5. Le serveur envoie la photo au client
+
+  dans imageProcess
+  *on alloue de la mémoire
+  *on le lit
+  *fonctionne
+  *ecriture
