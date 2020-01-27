@@ -9,7 +9,7 @@
 #define PORT 5005
 #define SA struct sockaddr
 
-
+//test
 // =======  Fonction d'envoie photo
 
 int sendPicture(int sockfd, const struct sockaddr_in cliaddr)

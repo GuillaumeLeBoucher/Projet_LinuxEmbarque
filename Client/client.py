@@ -2,6 +2,7 @@ import socket
 import numpy as np
 import cv2
 
+#test
 
 UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
@@ -34,7 +35,7 @@ monSocket.sendto(requete.encode(), (UDP_IP, UDP_PORT))
 
 #====  Réception de la photo ========
 
-if (requete == 2): 
+if (requete == 2):
     msg_recu, adr = monSocket.recvfrom(500000)
     print('Image ' + ' recu' + 'taille :' + str(len(msg_recu)))
     nparr = np.fromstring(msg_recu, np.uint8)
