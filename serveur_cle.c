@@ -92,14 +92,14 @@ int main(int argc, char *argv[])
 */
       char send_buffer[512];
 
-      FILE *photo = fopen("image.jpg","r");
+      FILE *photo = fopen("bonjour.jpg","r");
       printf("file desc\n");
     	fseek(photo, 0, SEEK_END);
     	int picture_size = ftell(photo);
     	fseek(photo, 0, SEEK_SET);
     	printf("Picture Size %d\n", picture_size);
       char buffer_photo [picture_size];
-      fread(buffer_photo,1,sizeof(buffer_photo),photo);
+      fread(buffer_photo,1,picture_size,photo);
       int taille_buffer;
       taille_buffer = sizeof(buffer_photo);
       printf("buffer size %d\n", taille_buffer);
@@ -113,8 +113,16 @@ int main(int argc, char *argv[])
       int nb_buffer = 0;
 
 
+      sendto(sock, buffer_photo, sizeof(buffer_photo),0, (struct sockaddr*) &si_other, slen);
+      bzero(buffer_photo, sizeof(buffer_photo));
 
-      while (total<30720){
+
+
+
+
+
+
+      /*while (total<30720){
           while (i<512)
         {
           int indice;
@@ -125,7 +133,8 @@ int main(int argc, char *argv[])
 
         nb_buffer += 1;
 
-        sendto(sock, send_buffer, sizeof(send_buffer),0, (struct sockaddr*) &si_other, slen);
+        sendto(sock, send_buffer, 512
+          ,0, (struct sockaddr*) &si_other, slen);
         bzero(send_buffer,sizeof(send_buffer));
         total = total + 512;
     }
@@ -139,7 +148,8 @@ int main(int argc, char *argv[])
         fin_buffer[a] = buffer_photo[indice];
         a +=1;
     }
-    sendto(sock, fin_buffer, sizeof(fin_buffer),0, (struct sockaddr*) &si_other, slen);
+    */
+
 
 
     FILE* fic;

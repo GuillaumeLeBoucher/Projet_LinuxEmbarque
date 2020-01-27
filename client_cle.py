@@ -1,4 +1,6 @@
 import socket
+import cv2
+import numpy as np
 
 """Taille paquet 512"""
 
@@ -16,12 +18,14 @@ monSocket.sendto(requete.encode(), (UDP_IP, UDP_PORT))
 
 
 truc = open("toto.jpg", "wb")
-i=0
-while (i<62):
-    reponse, adr = monSocket.recvfrom(512)
-    print("Reponse serveur : ", i)
-    truc.write(bytes(reponse))
-    i += 1
+
+msg_recu, adr = monSocket.recvfrom(500000)
+print('Image ' + ' recu' + 'taille :' + str(len(msg_recu)))
+nparr = np.fromstring(msg_recu, np.uint8)
+img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+cv2.imwrite('image2' + '.jpg',img_np)
+
+truc.write(msg_recu)
 
 truc.close()
 monSocket.close()
