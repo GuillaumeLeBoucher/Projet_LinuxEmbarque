@@ -13,13 +13,16 @@ declare var require: any;
 export class GalleryComponent implements OnInit {
   title ="Recent Photos";
   visibleImages: any[] = [];
+  visibleEtat:any ="";
   @Input() filterBy?: string = 'all'
   constructor(private imageService: ImageService) { 
     this.visibleImages = this.imageService.getImages();
+    this.visibleEtat = this.imageService.getEtat();
   }
 
   ngOnChange(){
-    this.visibleImages = this.imageService.getImages()
+    this.visibleImages = this.imageService.getImages();
+    this.visibleEtat = this.imageService.getEtat();
   }
   ngOnInit() {
   }

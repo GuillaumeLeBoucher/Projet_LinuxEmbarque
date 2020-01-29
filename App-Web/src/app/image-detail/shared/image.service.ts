@@ -11,6 +11,7 @@ export class ImageService{
     
     
     visibleImages =[];
+    visibleEtat="";
     getImages(){
         return this.visibleImages = IMAGES.slice(0)
     }
@@ -18,7 +19,11 @@ export class ImageService{
     getImageById( id: number){
         return IMAGES.slice(0).find(image => image.id ==id)
     } 
+    getEtat(){
+        return this.visibleEtat= ETAT
+    }
 } 
-console.log(data)
+console.log(data);
+// Fiare une pop up de demande de nom et de légende lors de la prise de photo
 const IMAGES = data['PhotoPath'];
 const ETAT = data['Etat']; // Etat est de type string
