@@ -2,6 +2,10 @@ import {Injectable} from '@angular/core'
 import { Component, OnInit } from '@angular/core';
 import * as data from "./data.json";
 
+
+// Avec ce service on va récupérer les données des images qui sont situées dans le JSON data.json. Ce Json est dans le 
+// même directory. On récupère en particulier le path des images ainsi que l'état de la caméra. On peut donc trouver les images
+// et les afficher dans l'application. De meme pour l'état.
 @Injectable()
 export class ImageService{
     
@@ -16,13 +20,5 @@ export class ImageService{
     } 
 } 
 console.log(data)
-const IMAGES2 = data['PhotoPath']
-console.log("imPath" , IMAGES2)
-const IMAGES = [
-    {"id": 1, "category": "boats", "caption": "View from a boat", "url": "assets/img/boat_01.jpg"},
-    {"id": 2, "category": "boats", "caption": "This boat is beautifull", "url": "assets/img/boat_02.jpg"},
-    {"id": 3, "category": "camping", "caption": "Camping view", "url": "assets/img/camping_01.jpg"},
-    {"id": 4, "category": "library", "caption": "All my books are in this picture", "url": "assets/img/library_01.jpg"},
-    {"id": 5, "category": "selfie", "caption": "Belle brochette de PD", "url": "assets/img/image.jpg"}
-
-]
+const IMAGES = data['PhotoPath'];
+const ETAT = data['Etat']; // Etat est de type string

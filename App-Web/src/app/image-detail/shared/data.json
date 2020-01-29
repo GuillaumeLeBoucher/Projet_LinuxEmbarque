@@ -1,1 +1,8 @@
-{"PhotoPath": [{"id": 1, "category": "boats", "url": "assets/img/boat_01.jpg", "caption": "View from a boat"}, {"id": 2, "category": "camping", "url": "assets/img/aaaaa_01.jpg", "caption": "View "}, {"id": 3, "category": "NewCat", "url": "assets/img/test_01.jpg", "caption": "Test Json for NewCat"}], "Etat": "0"}
+{
+    "PhotoPath": [
+        {"id": 1, "category": "boats", "url": "assets/img/boat_01.jpg", "caption": "View from a boat"}, 
+        {"id": 2, "category": "camping", "url": "assets/img/library_01.jpg", "caption": "View "}, 
+        {"id": 3, "category": "NewCat", "url": "assets/img/test.jpg", "caption": "Test Json for NewCat"}
+        ], 
+    "Etat": "0"
+}
