@@ -73,27 +73,30 @@ start_x=1
 gpu_mem=128
 
 ```
+## Contenu du dépot
+* Serveur :
+* Client :
+* App-web
+
 
 
 
 
 ## Cross compilation du serveur
 
-On utilise les Autotools pour compiler v4l2grab.
+On utilise V4L, une API vidéo pour les systèmes Linux. Dans le docker, pour installer et la configurer :
+* récupérer le projet
+* remplacer le fichier v4l2grab.c d'origine par celui qui est dans le répertoire du serveur (le notre)
+* On utilise les autotools fournit par V4L pour compiler v4l2grab. Dans le répertoire, on crée les fichiers de configuration `./autogen.sh`, lance les configuration ``./configure CC=./../buildroot-precompiled-2017.08/output/host/usr/bin/arm-linux-gcc --host=arm-linux`` puis `make`.
+
+
 
 Pour s'adapter à la cible embarquée, il faut commenter dans config.h.in la ligne #undef malloc (sinon rpl_malloc sera utilisé mais il n'existe pas sur notre OS installé sur la Raspberry). Le script configure va déterminer l'environnement et adapter ainsi précisément la compilation.
 Il faut lui passer en argument le compilateur qui va générer les exécutable ainsi que la cible embarquée.
 
-*Commande pour compiler v4l2grab :*
-
- `./autogen.sh`
-
- `./configure CC=./../buildroot-precompiled-2017.08/output/host/usr/bin/arm-linux-gcc --host=arm-linux`
-
- `make`
 
 
-## Discutions entre le serveur et le client : communication UDP
+## Fonctionnement entre le serveur et le client : communication UDP
 
   1. Le client se connecte au serveur
   2. Le client demande une photo
@@ -101,8 +104,14 @@ Il faut lui passer en argument le compilateur qui va générer les exécutable a
   4. Le serveur envoie la taille du buffer au client
   5. Le serveur envoie la photo au client
 
-  dans imageProcess
-  *on alloue de la mémoire
-  *on le lit
-  *fonctionne
-  *ecriture
+## Utilisation
+
+### Lancement
+
+* **Lancement serveur** :
+* **Lancement client** :
+
+### Commande à lancer à partir du terminal client
+
+* Commande pour prendre une photo :
+* Commande pour recevoir la photo :
