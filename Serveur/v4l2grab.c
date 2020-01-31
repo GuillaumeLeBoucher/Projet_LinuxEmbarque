@@ -38,6 +38,7 @@
 #define IO_USERPTR
 #endif
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,6 +48,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <malloc.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -60,14 +63,18 @@
 #include <signal.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <sys/socket.h>
 
 #include "config.h"
+#include "yuv.h"
 
 
+#define MAX 1024
+#define PORT 5005
 #define TAKE 2
 #define SEND 1
 #define END 3
-
+#define SA struct sockaddr
 
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
@@ -146,32 +153,6 @@ static void errno_exit(const char* s)
 	fprintf(stderr, "%s error %d, %s\n", s, errno, strerror(errno));
 	exit(EXIT_FAILURE);
 }
-
-//from YUV.c
-
-void YUV420toYUV444(int width, int height, unsigned char* src, unsigned char* dst) {
-    int line, column;
-    unsigned char *py, *pu, *pv;
-    unsigned char *tmp = dst;
-
-    // In this format each four bytes is two pixels. Each four bytes is two Y's, a Cb and a Cr.
-    // Each Y goes to one of the pixels, and the Cb and Cr belong to both pixels.
-    unsigned char *base_py = src;
-    unsigned char *base_pu = src+(height*width);
-    unsigned char *base_pv = src+(height*width)+(height*width)/4;
-
-    for (line = 0; line < height; ++line) {
-        for (column = 0; column < width; ++column) {
-            py = base_py+(line*width)+column;
-            pu = base_pu+(line/2*width/2)+column/2;
-            pv = base_pv+(line/2*width/2)+column/2;
-
-            *tmp++ = *py;
-            *tmp++ = *pu;
-            *tmp++ = *pv;
-        }
-    }
-
 
 
 
@@ -899,14 +880,18 @@ long_options [] = {
 
 
 
-char func(int sockfd)
+char func(int sockfd, const struct sockaddr_in cliaddr)
 {
+    int max = 10;
     char buff[1] = "0";
-    char buff_tot[MAX];
+    char buff_tot[max];
 
-    // infinite loop for chat
-    // read the message from client and copy it in buffer
-    read(sockfd, buff_tot, sizeof(buff_tot));
+    int len, n;
+		len = sizeof(cliaddr);  //len is value/resuslt
+		n = recvfrom(sockfd, (char *)buff_tot, strlen(buff_tot),
+	        	        0, ( struct sockaddr *) &cliaddr,
+       			        	&len);
+    buff_tot[n] = '\0';
     printf("commande = %c\n", buff_tot[0]);
     return buff_tot[0];
 
@@ -959,7 +944,12 @@ int sendPicture(int sockfd, const struct sockaddr_in cliaddr)
 
     sendto(sockfd, buffer_photo, sizeof(buffer_photo),0, (struct sockaddr*) &cliaddr, len);
     printf("Picture Size %d\n", picture_size);
+/*
 
+	if(jpegFilenamePart != 0){
+		free(jpegFilename);
+	}
+*/
 
 }
 
@@ -968,30 +958,22 @@ int sendPicture(int sockfd, const struct sockaddr_in cliaddr)
 int app(int sockfd, const struct sockaddr_in cliaddr)
 {
 int connfd;
-buff = func(sockfd);
-
-	while(buffer != END){
-
+char buff = '0';
+buff = func(sockfd, cliaddr);
 
         	// read the message from client and copy it in buffer
 		printf("Wait msg from client...\n");
 
-		int len, n;
-		len = sizeof(cliaddr);  //len is value/resuslt
-		n = recvfrom(sockfd, (char *)buffr, MAX,
-	        	        MSG_WAITALL, ( struct sockaddr *) &cliaddr,
-       			        	&len);
-		buffr[n] = '\0';
-		printf("Commande Client : %s\n", buffr);
 
-		int num = atoi(buffr);
+		printf("Commande Client : %s\n", buff);
 
-    while (num != END){
 
-  		switch(num){
+    while (buff != END){
+
+  		switch(buff){
   			case TAKE:
   				printf("Take picture\n");
-          takePicture()
+          takePicture();
   				break;
 
   			case SEND:
@@ -1008,10 +990,10 @@ buff = func(sockfd);
 
 		// send message to client
 
-		sendto(sockfd, (const char *)buffs, strlen(buffs),
+	/*	sendto(sockfd, (const char *)buffs, strlen(buffs),
 			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
-			len);
-	}
+			len); */
+
 	return 0;
 }
 
@@ -1027,7 +1009,7 @@ buff = func(sockfd);
 
 int main(int argc, char **argv)
 {
-
+  char buffer[30];
   jpegFilename = "img.jpg";
 
   	// ======== Création du Socket
@@ -1035,7 +1017,6 @@ int main(int argc, char **argv)
 
   	int sockfd;
   	struct sockaddr_in servaddr, cliaddr;
-  	char buffer[MAX];
 
   	// socket create and verification
   	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -1083,19 +1064,6 @@ int main(int argc, char **argv)
 
 
 
-
-
-
-
-
-
-
-
-	if(jpegFilenamePart != 0){
-		free(jpegFilename);
-	}
-
-	exit(EXIT_SUCCESS);
-
+	close (sockfd)
 	return 0;
 }
