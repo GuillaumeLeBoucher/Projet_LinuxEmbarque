@@ -1,11 +1,6 @@
-# Projet_LinuxEmbarque
+# Projet : Linux embarqué Caméra IP basé su Raspberry pi.
 
-## Sujet du Projet
-
-L'intitulé du projet se situe à l'adresse suivante : [sujet](Sujet_Projet_Camera.md)
-
-L'objectif principal va être de mettre en place une caméra IP à l'aide d'une RPI3 puis de prendre des photos avec cette dernière.
-
+# Groupe
 
 Le groupe de projet est composé de :
 
@@ -14,14 +9,75 @@ Le groupe de projet est composé de :
 * Aurélien Grenier
 * Guillaume Le Boucher
 
+
+## Sujet du Projet
+
+L'intitulé du projet se situe à l'adresse suivante : [sujet](Sujet_Projet_Camera.md)
+
+L'objectif principal va être de mettre en place une caméra IP à l'aide d'une RPI3 puis de prendre des photos avec cette dernière
+
+## Fonctionnalités
+
+1. Prendre une photo à distance et la visualiser
+
+2. Avoir des informations de l'état de la caméra via une led
+
+
+
 Vous trouverez dans ce README les sections suivantes :
 
-- **Configuration du système :** Cette section va expliquer l'ensemble des étapes nécéssaires à la configuration de notre système. Ce dernier est composé de la RPI3 et de la caméra. On y retrouvera donc une description des étapes de configurations de l'IP statique, du flashage de la carte SD, etc.
+- **Configuration du système :** Cette section va expliquer l'ensemble des étapes nécessaires à la configuration de notre système. Ce dernier est composé de la RPI3 et de la caméra. On y retrouvera donc une description des étapes : de la cross compilation, du flashage de la carte SD, etc...
 
-- **Mode de fonctionnement de notre projet :** Cette section va décrire le mode de fonctionnement de notre système et la marche à suivre afin qu'un utilisateur quelconque utilise la caméra IP avec la RPI3
+- **Utilisation de la caméra IP :** Cette section va décrire la marche à suivre afin qu'un utilisateur puisse utiliser la caméra IP avec la RPI3
 
 
-## Compilation de v4l2grab
+
+
+## Mise en place du système
+
+On utilisera Buildroot pour compiler et paramétrer notre système d'exploitation embarqué.
+Pour ce projet, une tarball Buidroot est disponible par l'intermédiaire d'une image Docker. Cette tarball contient l'os précompilé.
+
+Commande pour récupérer l'image et créer le conteneur Docker :
+
+```
+sudo docker pull pblottiere/embsys-rpi3-buildroot-video
+sudo docker run -it pblottiere/embsys-rpi3-buildroot-video /bin/bash
+
+```
+On peut ensuite extraire l'os :
+
+```
+cd /root
+tar zxvf buildroot-precompiled-2017.08.tar.gz
+
+```
+
+## Flashage de la carte SD
+
+Il faut tout d'abord sortir l'image de l'os du docker :
+
+`docker cp <container_id>:/root/buildroot-precompiled-2017.08/output/images/sdcard.img`
+
+Puis ensuite flasher :
+
+`sudo dd if=sdcard.img of=/dev/sdb`
+
+Bien vérifier le chemin de la carte SD (utilisation de lsblk)
+
+La carte SD possède donc deux partitions. Il faut ajouter dans le fichier
+`config.txt` de la première partition.
+
+```
+start_x=1
+gpu_mem=128
+
+```
+
+
+
+
+## Cross compilation du serveur
 
 On utilise les Autotools pour compiler v4l2grab.
 
