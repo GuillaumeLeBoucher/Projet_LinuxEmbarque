@@ -85,14 +85,17 @@ gpu_mem=128
 ## Cross compilation du serveur
 
 On utilise V4L, une API vidéo pour les systèmes Linux. Dans le docker, pour installer et la configurer :
-* récupérer le projet
-* remplacer le fichier v4l2grab.c d'origine par celui qui est dans le répertoire du serveur (le notre)
-* On utilise les autotools fournit par V4L pour compiler v4l2grab. Dans le répertoire, on crée les fichiers de configuration `./autogen.sh`, lance les configuration ``./configure CC=./../buildroot-precompiled-2017.08/output/host/usr/bin/arm-linux-gcc --host=arm-linux`` puis `make`.
+* récupérer le proje:
+`git pull https://github.com/GuillaumeLeBoucher/Projet_LinuxEmbarque`
 
-
-
-Pour s'adapter à la cible embarquée, il faut commenter dans config.h.in la ligne #undef malloc (sinon rpl_malloc sera utilisé mais il n'existe pas sur notre OS installé sur la Raspberry). Le script configure va déterminer l'environnement et adapter ainsi précisément la compilation.
-Il faut lui passer en argument le compilateur qui va générer les exécutable ainsi que la cible embarquée.
+* Aller dans le répertoireServeur
+`cd Serveur`
+ 
+* On utilise les autotools pour compiler le projet :
+`./autogen.sh \\
+./configure CC=./../../buildroot-precompiled-2017.08/output/host/usr/bin/arm-linux-gcc --host=arm-linux \\
+make \\
+make install`
 
 
 
