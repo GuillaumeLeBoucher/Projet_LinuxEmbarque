@@ -92,10 +92,11 @@ On utilise V4L, une API vidéo pour les systèmes Linux. Dans le docker, pour in
 `cd Serveur`
  
 * On utilise les autotools pour compiler le projet :
-`./autogen.sh \\
-./configure CC=./../../buildroot-precompiled-2017.08/output/host/usr/bin/arm-linux-gcc --host=arm-linux \\
-make \\
-make install`
+```./autogen.sh
+./configure CC=./../../buildroot-precompiled-2017.08/output/host/usr/bin/arm-linux-gcc --host=arm-linux 
+make
+make install
+```
 
 
 
