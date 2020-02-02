@@ -47,6 +47,12 @@ with open(JSON_FILE, "w") as f:
 #Fonctions
 
 def signal_handler(sig, frame):
+    with open(JSON_FILE, "r") as f:
+        dico = json.load(f)
+        dico["Etat"] = "0"
+    with open(JSON_FILE, "w") as f:
+        json.dump(dico, f)
+    monSocket.close()
     sys.exit(0)
 
 
@@ -71,8 +77,6 @@ def veille():
         input_client = input(" Quelle commande voulez-vous ?:\n Entrez 1 pour prendre une photos et l'envoyer vers votre gallerie\n").strip()  
 
 
-    with open(JSON_FILE, "r") as f:
-        dico = json.load(f)
     
     #send msg to serveur :
     with open(JSON_FILE, "r") as f:

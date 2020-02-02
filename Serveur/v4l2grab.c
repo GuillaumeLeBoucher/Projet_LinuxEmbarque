@@ -22,7 +22,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
- /**************************************************************************
+/**************************************************************************
  *   Modification History                                                  *
  *                                                                         *
  *   Matthew Witherwax      21AUG2013                                      *
@@ -68,16 +68,15 @@
 #include "config.h"
 #include "yuv.h"
 
-
 #define MAX 1024
 #define PORT 5005
+int sockfd;
 #define TAKE 2
 #define SEND 1
 #define END 3
 #define SA struct sockaddr
 
-
-#define CLEAR(x) memset (&(x), 0, sizeof (x))
+#define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 #ifndef VERSION
 #define VERSION "unknown"
@@ -88,27 +87,29 @@
 #define VIDIOC_REQBUFS_COUNT 2
 #endif
 
-typedef enum {
+typedef enum
+{
 #ifdef IO_READ
-        IO_METHOD_READ,
+	IO_METHOD_READ,
 #endif
 #ifdef IO_MMAP
-        IO_METHOD_MMAP,
+	IO_METHOD_MMAP,
 #endif
 #ifdef IO_USERPTR
-        IO_METHOD_USERPTR,
+	IO_METHOD_USERPTR,
 #endif
 } io_method;
 
-struct buffer {
-        void *                  start;
-        size_t                  length;
+struct buffer
+{
+	void *start;
+	size_t length;
 };
 
-static io_method        io              = IO_METHOD_MMAP;
-static int              fd              = -1;
-struct buffer *         buffers         = NULL;
-static unsigned int     n_buffers       = 0;
+static io_method io = IO_METHOD_MMAP;
+static int fd = -1;
+struct buffer *buffers = NULL;
+static unsigned int n_buffers = 0;
 
 // global settings
 static unsigned int width = 640;
@@ -116,29 +117,32 @@ static unsigned int height = 480;
 static unsigned int fps = 30;
 static int continuous = 0;
 static unsigned char jpegQuality = 70;
-static char* jpegFilename = NULL;
-static char* jpegFilenamePart = NULL;
-static char* deviceName = "/dev/video0";
+static char *jpegFilename = NULL;
+static char *jpegFilenamePart = NULL;
+static char *deviceName = "/dev/video0";
 
-static const char* const continuousFilenameFmt = "%s_%010"PRIu32"_%"PRId64".jpg";
+static const char *const continuousFilenameFmt = "%s_%010" PRIu32 "_%" PRId64 ".jpg";
+
 
 /**
 SIGINT interput handler
 */
 
-void StopContCapture(int sig_id) {
+void StopContCapture(int sig_id)
+{
 	printf("stoping continuous capture\n");
 	continuous = 0;
 }
 
-void InstallSIGINTHandler() {
+void InstallSIGINTHandler()
+{
 	struct sigaction sa;
 	CLEAR(sa);
 
 	sa.sa_handler = StopContCapture;
-	if(sigaction(SIGINT, &sa, 0) != 0)
+	if (sigaction(SIGINT, &sa, 0) != 0)
 	{
-		fprintf(stderr,"could not install SIGINT handler, continuous capture disabled");
+		fprintf(stderr, "could not install SIGINT handler, continuous capture disabled");
 		continuous = 0;
 	}
 }
@@ -148,19 +152,18 @@ void InstallSIGINTHandler() {
 
 	\param s error message to print
 */
-static void errno_exit(const char* s)
+static void errno_exit(const char *s)
 {
 	fprintf(stderr, "%s error %d, %s\n", s, errno, strerror(errno));
 	exit(EXIT_FAILURE);
 }
 
-
-
-static int xioctl(int fd, int request, void* argp)
+static int xioctl(int fd, int request, void *argp)
 {
 	int r;
 
-	do r = v4l2_ioctl(fd, request, argp);
+	do
+		r = v4l2_ioctl(fd, request, argp);
 	while (-1 == r && EINTR == errno);
 
 	return r;
@@ -171,21 +174,22 @@ static int xioctl(int fd, int request, void* argp)
 
 	\param img image to write
 */
-static void jpegWrite(unsigned char* img, char* jpegFilename)
+static void jpegWrite(unsigned char *img, char *jpegFilename)
 {
 	struct jpeg_compress_struct cinfo;
 	struct jpeg_error_mgr jerr;
 
 	JSAMPROW row_pointer[1];
-	FILE *outfile = fopen( jpegFilename, "wb" );
+	FILE *outfile = fopen(jpegFilename, "wb");
 
 	// try to open file for saving
-	if (!outfile) {
+	if (!outfile)
+	{
 		errno_exit("jpeg");
 	}
 
 	// create jpeg data
-	cinfo.err = jpeg_std_error( &jerr );
+	cinfo.err = jpeg_std_error(&jerr);
 	jpeg_create_compress(&cinfo);
 	jpeg_stdio_dest(&cinfo, outfile);
 
@@ -204,8 +208,9 @@ static void jpegWrite(unsigned char* img, char* jpegFilename)
 	jpeg_start_compress(&cinfo, TRUE);
 
 	// feed data
-	while (cinfo.next_scanline < cinfo.image_height) {
-		row_pointer[0] = &img[cinfo.next_scanline * cinfo.image_width *  cinfo.input_components];
+	while (cinfo.next_scanline < cinfo.image_height)
+	{
+		row_pointer[0] = &img[cinfo.next_scanline * cinfo.image_width * cinfo.input_components];
 		jpeg_write_scanlines(&cinfo, row_pointer, 1);
 	}
 
@@ -222,24 +227,24 @@ static void jpegWrite(unsigned char* img, char* jpegFilename)
 /**
 	process image read
 */
-static void imageProcess(const void* p, struct timeval timestamp)
+static void imageProcess(const void *p, struct timeval timestamp)
 {
 	//timestamp.tv_sec
 	//timestamp.tv_usec
-	unsigned char* src = (unsigned char*)p;
-	unsigned char* dst = malloc(width*height*3*sizeof(char));
+	unsigned char *src = (unsigned char *)p;
+	unsigned char *dst = malloc(width * height * 3 * sizeof(char));
 
 	YUV420toYUV444(width, height, src, dst);
 
-	if(continuous==1) {
+	if (continuous == 1)
+	{
 		static uint32_t img_ind = 0;
 		int64_t timestamp_long;
-		timestamp_long = timestamp.tv_sec*1e6 + timestamp.tv_usec;
-		sprintf(jpegFilename,continuousFilenameFmt,jpegFilenamePart,img_ind++,timestamp_long);
-
+		timestamp_long = timestamp.tv_sec * 1e6 + timestamp.tv_usec;
+		sprintf(jpegFilename, continuousFilenameFmt, jpegFilenamePart, img_ind++, timestamp_long);
 	}
 	// write jpeg
-	jpegWrite(dst,jpegFilename);
+	jpegWrite(dst, jpegFilename);
 
 	// free temporary image
 	free(dst);
@@ -255,96 +260,103 @@ static int frameRead(void)
 	unsigned int i;
 #endif
 
-	switch (io) {
+	switch (io)
+	{
 #ifdef IO_READ
-		case IO_METHOD_READ:
-			if (-1 == v4l2_read(fd, buffers[0].start, buffers[0].length)) {
-				switch (errno) {
-					case EAGAIN:
-						return 0;
+	case IO_METHOD_READ:
+		if (-1 == v4l2_read(fd, buffers[0].start, buffers[0].length))
+		{
+			switch (errno)
+			{
+			case EAGAIN:
+				return 0;
 
-					case EIO:
-						// Could ignore EIO, see spec.
-						// fall through
+			case EIO:
+				// Could ignore EIO, see spec.
+				// fall through
 
-					default:
-						errno_exit("read");
-				}
+			default:
+				errno_exit("read");
 			}
+		}
 
-			struct timespec ts;
-			struct timeval timestamp;
-			clock_gettime(CLOCK_MONOTONIC,&ts);
-			timestamp.tv_sec = ts.tv_sec;
-			timestamp.tv_usec = ts.tv_nsec/1000;
+		struct timespec ts;
+		struct timeval timestamp;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		timestamp.tv_sec = ts.tv_sec;
+		timestamp.tv_usec = ts.tv_nsec / 1000;
 
-			imageProcess(buffers[0].start,timestamp);
-			break;
+		imageProcess(buffers[0].start, timestamp);
+		break;
 #endif
 
 #ifdef IO_MMAP
-		case IO_METHOD_MMAP:
-			CLEAR(buf);
+	case IO_METHOD_MMAP:
+		CLEAR(buf);
 
-			buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-			buf.memory = V4L2_MEMORY_MMAP;
+		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		buf.memory = V4L2_MEMORY_MMAP;
 
-			if (-1 == xioctl(fd, VIDIOC_DQBUF, &buf)) {
-				switch (errno) {
-					case EAGAIN:
-						return 0;
+		if (-1 == xioctl(fd, VIDIOC_DQBUF, &buf))
+		{
+			switch (errno)
+			{
+			case EAGAIN:
+				return 0;
 
-					case EIO:
-						// Could ignore EIO, see spec
-						// fall through
+			case EIO:
+				// Could ignore EIO, see spec
+				// fall through
 
-					default:
-						errno_exit("VIDIOC_DQBUF");
-				}
+			default:
+				errno_exit("VIDIOC_DQBUF");
 			}
+		}
 
-			assert(buf.index < n_buffers);
+		assert(buf.index < n_buffers);
 
-			imageProcess(buffers[buf.index].start,buf.timestamp);
+		imageProcess(buffers[buf.index].start, buf.timestamp);
 
-			if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
-				errno_exit("VIDIOC_QBUF");
+		if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
+			errno_exit("VIDIOC_QBUF");
 
-			break;
+		break;
 #endif
 
 #ifdef IO_USERPTR
-			case IO_METHOD_USERPTR:
-				CLEAR (buf);
+	case IO_METHOD_USERPTR:
+		CLEAR(buf);
 
-				buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-				buf.memory = V4L2_MEMORY_USERPTR;
+		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		buf.memory = V4L2_MEMORY_USERPTR;
 
-				if (-1 == xioctl(fd, VIDIOC_DQBUF, &buf)) {
-					switch (errno) {
-						case EAGAIN:
-							return 0;
+		if (-1 == xioctl(fd, VIDIOC_DQBUF, &buf))
+		{
+			switch (errno)
+			{
+			case EAGAIN:
+				return 0;
 
-						case EIO:
-							// Could ignore EIO, see spec.
-							// fall through
+			case EIO:
+				// Could ignore EIO, see spec.
+				// fall through
 
-						default:
-							errno_exit("VIDIOC_DQBUF");
-					}
-				}
+			default:
+				errno_exit("VIDIOC_DQBUF");
+			}
+		}
 
-				for (i = 0; i < n_buffers; ++i)
-					if (buf.m.userptr == (unsigned long)buffers[i].start && buf.length == buffers[i].length)
-						break;
-
-				assert (i < n_buffers);
-
-				imageProcess((void *)buf.m.userptr,buf.timestamp);
-
-				if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
-					errno_exit("VIDIOC_QBUF");
+		for (i = 0; i < n_buffers; ++i)
+			if (buf.m.userptr == (unsigned long)buffers[i].start && buf.length == buffers[i].length)
 				break;
+
+		assert(i < n_buffers);
+
+		imageProcess((void *)buf.m.userptr, buf.timestamp);
+
+		if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
+			errno_exit("VIDIOC_QBUF");
+		break;
 #endif
 	}
 
@@ -362,8 +374,10 @@ static void mainLoop(void)
 	numberOfTimeouts = 0;
 	count = 3;
 
-	while (count-- > 0) {
-		for (;;) {
+	while (count-- > 0)
+	{
+		for (;;)
+		{
 			fd_set fds;
 			struct timeval tv;
 			int r;
@@ -377,22 +391,28 @@ static void mainLoop(void)
 
 			r = select(fd + 1, &fds, NULL, NULL, &tv);
 
-			if (-1 == r) {
+			if (-1 == r)
+			{
 				if (EINTR == errno)
 					continue;
 
 				errno_exit("select");
 			}
 
-			if (0 == r) {
-				if (numberOfTimeouts <= 0) {
+			if (0 == r)
+			{
+				if (numberOfTimeouts <= 0)
+				{
 					count++;
-				} else {
+				}
+				else
+				{
 					fprintf(stderr, "select timeout\n");
 					exit(EXIT_FAILURE);
 				}
 			}
-			if(continuous == 1) {
+			if (continuous == 1)
+			{
 				count = 3;
 			}
 
@@ -411,26 +431,27 @@ static void captureStop(void)
 {
 	enum v4l2_buf_type type;
 
-	switch (io) {
+	switch (io)
+	{
 #ifdef IO_READ
-		case IO_METHOD_READ:
-			/* Nothing to do. */
-			break;
+	case IO_METHOD_READ:
+		/* Nothing to do. */
+		break;
 #endif
 
 #ifdef IO_MMAP
-		case IO_METHOD_MMAP:
+	case IO_METHOD_MMAP:
 #endif
 #ifdef IO_USERPTR
-		case IO_METHOD_USERPTR:
+	case IO_METHOD_USERPTR:
 #endif
 #if defined(IO_MMAP) || defined(IO_USERPTR)
-			type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-			if (-1 == xioctl(fd, VIDIOC_STREAMOFF, &type))
+		if (-1 == xioctl(fd, VIDIOC_STREAMOFF, &type))
 			errno_exit("VIDIOC_STREAMOFF");
 
-			break;
+		break;
 #endif
 	}
 }
@@ -443,59 +464,62 @@ static void captureStart(void)
 	unsigned int i;
 	enum v4l2_buf_type type;
 
-	switch (io) {
+	switch (io)
+	{
 #ifdef IO_READ
-		case IO_METHOD_READ:
-			/* Nothing to do. */
-			break;
+	case IO_METHOD_READ:
+		/* Nothing to do. */
+		break;
 #endif
 
 #ifdef IO_MMAP
-		case IO_METHOD_MMAP:
-			for (i = 0; i < n_buffers; ++i) {
-				struct v4l2_buffer buf;
+	case IO_METHOD_MMAP:
+		for (i = 0; i < n_buffers; ++i)
+		{
+			struct v4l2_buffer buf;
 
-				CLEAR(buf);
+			CLEAR(buf);
 
-				buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-				buf.memory = V4L2_MEMORY_MMAP;
-				buf.index = i;
+			buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+			buf.memory = V4L2_MEMORY_MMAP;
+			buf.index = i;
 
-				if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
-					errno_exit("VIDIOC_QBUF");
-				}
+			if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
+				errno_exit("VIDIOC_QBUF");
+		}
 
-			type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-			if (-1 == xioctl(fd, VIDIOC_STREAMON, &type))
-				errno_exit("VIDIOC_STREAMON");
+		if (-1 == xioctl(fd, VIDIOC_STREAMON, &type))
+			errno_exit("VIDIOC_STREAMON");
 
-			break;
+		break;
 #endif
 
 #ifdef IO_USERPTR
-		case IO_METHOD_USERPTR:
-			for (i = 0; i < n_buffers; ++i) {
-				struct v4l2_buffer buf;
+	case IO_METHOD_USERPTR:
+		for (i = 0; i < n_buffers; ++i)
+		{
+			struct v4l2_buffer buf;
 
-			CLEAR (buf);
+			CLEAR(buf);
 
 			buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 			buf.memory = V4L2_MEMORY_USERPTR;
 			buf.index = i;
-			buf.m.userptr = (unsigned long) buffers[i].start;
+			buf.m.userptr = (unsigned long)buffers[i].start;
 			buf.length = buffers[i].length;
 
 			if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
 				errno_exit("VIDIOC_QBUF");
-			}
+		}
 
-			type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-			if (-1 == xioctl(fd, VIDIOC_STREAMON, &type))
-				errno_exit("VIDIOC_STREAMON");
+		if (-1 == xioctl(fd, VIDIOC_STREAMON, &type))
+			errno_exit("VIDIOC_STREAMON");
 
-			break;
+		break;
 #endif
 	}
 }
@@ -504,26 +528,27 @@ static void deviceUninit(void)
 {
 	unsigned int i;
 
-	switch (io) {
+	switch (io)
+	{
 #ifdef IO_READ
-		case IO_METHOD_READ:
-			free(buffers[0].start);
-			break;
+	case IO_METHOD_READ:
+		free(buffers[0].start);
+		break;
 #endif
 
 #ifdef IO_MMAP
-		case IO_METHOD_MMAP:
-			for (i = 0; i < n_buffers; ++i)
-				if (-1 == v4l2_munmap(buffers[i].start, buffers[i].length))
-					errno_exit("munmap");
-			break;
+	case IO_METHOD_MMAP:
+		for (i = 0; i < n_buffers; ++i)
+			if (-1 == v4l2_munmap(buffers[i].start, buffers[i].length))
+				errno_exit("munmap");
+		break;
 #endif
 
 #ifdef IO_USERPTR
-		case IO_METHOD_USERPTR:
-			for (i = 0; i < n_buffers; ++i)
-				free(buffers[i].start);
-			break;
+	case IO_METHOD_USERPTR:
+		for (i = 0; i < n_buffers; ++i)
+			free(buffers[i].start);
+		break;
 #endif
 	}
 
@@ -535,7 +560,8 @@ static void readInit(unsigned int buffer_size)
 {
 	buffers = calloc(1, sizeof(*buffers));
 
-	if (!buffers) {
+	if (!buffers)
+	{
 		fprintf(stderr, "Out of memory\n");
 		exit(EXIT_FAILURE);
 	}
@@ -543,8 +569,9 @@ static void readInit(unsigned int buffer_size)
 	buffers[0].length = buffer_size;
 	buffers[0].start = malloc(buffer_size);
 
-	if (!buffers[0].start) {
-		fprintf (stderr, "Out of memory\n");
+	if (!buffers[0].start)
+	{
+		fprintf(stderr, "Out of memory\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -561,28 +588,35 @@ static void mmapInit(void)
 	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	req.memory = V4L2_MEMORY_MMAP;
 
-	if (-1 == xioctl(fd, VIDIOC_REQBUFS, &req)) {
-		if (EINVAL == errno) {
+	if (-1 == xioctl(fd, VIDIOC_REQBUFS, &req))
+	{
+		if (EINVAL == errno)
+		{
 			fprintf(stderr, "%s does not support memory mapping\n", deviceName);
 			exit(EXIT_FAILURE);
-		} else {
+		}
+		else
+		{
 			errno_exit("VIDIOC_REQBUFS");
 		}
 	}
 
-	if (req.count < 2) {
+	if (req.count < 2)
+	{
 		fprintf(stderr, "Insufficient buffer memory on %s\n", deviceName);
 		exit(EXIT_FAILURE);
 	}
 
 	buffers = calloc(req.count, sizeof(*buffers));
 
-	if (!buffers) {
+	if (!buffers)
+	{
 		fprintf(stderr, "Out of memory\n");
 		exit(EXIT_FAILURE);
 	}
 
-	for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
+	for (n_buffers = 0; n_buffers < req.count; ++n_buffers)
+	{
 		struct v4l2_buffer buf;
 
 		CLEAR(buf);
@@ -618,27 +652,34 @@ static void userptrInit(unsigned int buffer_size)
 	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	req.memory = V4L2_MEMORY_USERPTR;
 
-	if (-1 == xioctl(fd, VIDIOC_REQBUFS, &req)) {
-		if (EINVAL == errno) {
+	if (-1 == xioctl(fd, VIDIOC_REQBUFS, &req))
+	{
+		if (EINVAL == errno)
+		{
 			fprintf(stderr, "%s does not support user pointer i/o\n", deviceName);
 			exit(EXIT_FAILURE);
-		} else {
+		}
+		else
+		{
 			errno_exit("VIDIOC_REQBUFS");
 		}
 	}
 
 	buffers = calloc(4, sizeof(*buffers));
 
-	if (!buffers) {
+	if (!buffers)
+	{
 		fprintf(stderr, "Out of memory\n");
 		exit(EXIT_FAILURE);
 	}
 
-	for (n_buffers = 0; n_buffers < 4; ++n_buffers) {
+	for (n_buffers = 0; n_buffers < 4; ++n_buffers)
+	{
 		buffers[n_buffers].length = buffer_size;
 		buffers[n_buffers].start = memalign(/* boundary */ page_size, buffer_size);
 
-		if (!buffers[n_buffers].start) {
+		if (!buffers[n_buffers].start)
+		{
 			fprintf(stderr, "Out of memory\n");
 			exit(EXIT_FAILURE);
 		}
@@ -658,42 +699,50 @@ static void deviceInit(void)
 	struct v4l2_streamparm frameint;
 	unsigned int min;
 
-	if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &cap)) {
-		if (EINVAL == errno) {
-			fprintf(stderr, "%s is no V4L2 device\n",deviceName);
+	if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &cap))
+	{
+		if (EINVAL == errno)
+		{
+			fprintf(stderr, "%s is no V4L2 device\n", deviceName);
 			exit(EXIT_FAILURE);
-		} else {
+		}
+		else
+		{
 			errno_exit("VIDIOC_QUERYCAP");
 		}
 	}
 
-	if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
-		fprintf(stderr, "%s is no video capture device\n",deviceName);
+	if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
+	{
+		fprintf(stderr, "%s is no video capture device\n", deviceName);
 		exit(EXIT_FAILURE);
 	}
 
-	switch (io) {
+	switch (io)
+	{
 #ifdef IO_READ
-		case IO_METHOD_READ:
-			if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
-				fprintf(stderr, "%s does not support read i/o\n",deviceName);
-				exit(EXIT_FAILURE);
-			}
-			break;
+	case IO_METHOD_READ:
+		if (!(cap.capabilities & V4L2_CAP_READWRITE))
+		{
+			fprintf(stderr, "%s does not support read i/o\n", deviceName);
+			exit(EXIT_FAILURE);
+		}
+		break;
 #endif
 
 #ifdef IO_MMAP
-		case IO_METHOD_MMAP:
+	case IO_METHOD_MMAP:
 #endif
 #ifdef IO_USERPTR
-		case IO_METHOD_USERPTR:
+	case IO_METHOD_USERPTR:
 #endif
 #if defined(IO_MMAP) || defined(IO_USERPTR)
-      			if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-				fprintf(stderr, "%s does not support streaming i/o\n",deviceName);
-				exit(EXIT_FAILURE);
-			}
-			break;
+		if (!(cap.capabilities & V4L2_CAP_STREAMING))
+		{
+			fprintf(stderr, "%s does not support streaming i/o\n", deviceName);
+			exit(EXIT_FAILURE);
+		}
+		break;
 #endif
 	}
 
@@ -702,21 +751,26 @@ static void deviceInit(void)
 
 	cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-	if (0 == xioctl(fd, VIDIOC_CROPCAP, &cropcap)) {
+	if (0 == xioctl(fd, VIDIOC_CROPCAP, &cropcap))
+	{
 		crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		crop.c = cropcap.defrect; /* reset to default */
 
-		if (-1 == xioctl(fd, VIDIOC_S_CROP, &crop)) {
-			switch (errno) {
-				case EINVAL:
-					/* Cropping not supported. */
-					break;
-				default:
-					/* Errors ignored. */
-					break;
+		if (-1 == xioctl(fd, VIDIOC_S_CROP, &crop))
+		{
+			switch (errno)
+			{
+			case EINVAL:
+				/* Cropping not supported. */
+				break;
+			default:
+				/* Errors ignored. */
+				break;
 			}
 		}
-	} else {
+	}
+	else
+	{
 		/* Errors ignored. */
 	}
 
@@ -732,34 +786,37 @@ static void deviceInit(void)
 	if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt))
 		errno_exit("VIDIOC_S_FMT");
 
-	if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUV420) {
-		fprintf(stderr,"Libv4l didn't accept YUV420 format. Can't proceed.\n");
+	if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_YUV420)
+	{
+		fprintf(stderr, "Libv4l didn't accept YUV420 format. Can't proceed.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Note VIDIOC_S_FMT may change width and height. */
-	if (width != fmt.fmt.pix.width) {
+	if (width != fmt.fmt.pix.width)
+	{
 		width = fmt.fmt.pix.width;
-		fprintf(stderr,"Image width set to %i by device %s.\n", width, deviceName);
+		fprintf(stderr, "Image width set to %i by device %s.\n", width, deviceName);
 	}
 
-	if (height != fmt.fmt.pix.height) {
+	if (height != fmt.fmt.pix.height)
+	{
 		height = fmt.fmt.pix.height;
-		fprintf(stderr,"Image height set to %i by device %s.\n", height, deviceName);
+		fprintf(stderr, "Image height set to %i by device %s.\n", height, deviceName);
 	}
 
-  /* If the user has set the fps to -1, don't try to set the frame interval */
-  if (fps != -1)
-  {
-    CLEAR(frameint);
+	/* If the user has set the fps to -1, don't try to set the frame interval */
+	if (fps != -1)
+	{
+		CLEAR(frameint);
 
-    /* Attempt to set the frame interval. */
-    frameint.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    frameint.parm.capture.timeperframe.numerator = 1;
-    frameint.parm.capture.timeperframe.denominator = fps;
-    if (-1 == xioctl(fd, VIDIOC_S_PARM, &frameint))
-      fprintf(stderr,"Unable to set frame interval.\n");
-  }
+		/* Attempt to set the frame interval. */
+		frameint.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		frameint.parm.capture.timeperframe.numerator = 1;
+		frameint.parm.capture.timeperframe.denominator = fps;
+		if (-1 == xioctl(fd, VIDIOC_S_PARM, &frameint))
+			fprintf(stderr, "Unable to set frame interval.\n");
+	}
 
 	/* Buggy driver paranoia. */
 	min = fmt.fmt.pix.width * 2;
@@ -769,23 +826,24 @@ static void deviceInit(void)
 	if (fmt.fmt.pix.sizeimage < min)
 		fmt.fmt.pix.sizeimage = min;
 
-	switch (io) {
+	switch (io)
+	{
 #ifdef IO_READ
-		case IO_METHOD_READ:
-			readInit(fmt.fmt.pix.sizeimage);
-			break;
+	case IO_METHOD_READ:
+		readInit(fmt.fmt.pix.sizeimage);
+		break;
 #endif
 
 #ifdef IO_MMAP
-		case IO_METHOD_MMAP:
-			mmapInit();
-			break;
+	case IO_METHOD_MMAP:
+		mmapInit();
+		break;
 #endif
 
 #ifdef IO_USERPTR
-		case IO_METHOD_USERPTR:
-			userptrInit(fmt.fmt.pix.sizeimage);
-			break;
+	case IO_METHOD_USERPTR:
+		userptrInit(fmt.fmt.pix.sizeimage);
+		break;
 #endif
 	}
 }
@@ -809,13 +867,15 @@ static void deviceOpen(void)
 	struct stat st;
 
 	// stat file
-	if (-1 == stat(deviceName, &st)) {
+	if (-1 == stat(deviceName, &st))
+	{
 		fprintf(stderr, "Cannot identify '%s': %d, %s\n", deviceName, errno, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	// check if its device
-	if (!S_ISCHR(st.st_mode)) {
+	if (!S_ISCHR(st.st_mode))
+	{
 		fprintf(stderr, "%s is no device\n", deviceName);
 		exit(EXIT_FAILURE);
 	}
@@ -824,7 +884,8 @@ static void deviceOpen(void)
 	fd = v4l2_open(deviceName, O_RDWR /* required */ | O_NONBLOCK, 0);
 
 	// check if opening was successfull
-	if (-1 == fd) {
+	if (-1 == fd)
+	{
 		fprintf(stderr, "Cannot open '%s': %d, %s\n", deviceName, errno, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -833,80 +894,80 @@ static void deviceOpen(void)
 /**
 	print usage information
 */
-static void usage(FILE* fp, int argc, char** argv)
+static void usage(FILE *fp, int argc, char **argv)
 {
 	fprintf(fp,
-		"Usage: %s [options]\n\n"
-		"Options:\n"
-		"-d | --device name   Video device name [/dev/video0]\n"
-		"-h | --help          Print this message\n"
-		"-o | --output        Set JPEG output filename\n"
-		"-q | --quality       Set JPEG quality (0-100)\n"
-		"-m | --mmap          Use memory mapped buffers\n"
-		"-r | --read          Use read() calls\n"
-		"-u | --userptr       Use application allocated buffers\n"
-		"-W | --width         Set image width\n"
-		"-H | --height        Set image height\n"
-		"-I | --interval      Set frame interval (fps) (-1 to skip)\n"
-		"-c | --continuous    Do continous capture, stop with SIGINT.\n"
-		"-v | --version       Print version\n"
-		"",
-		argv[0]);
-	}
+			"Usage: %s [options]\n\n"
+			"Options:\n"
+			"-d | --device name   Video device name [/dev/video0]\n"
+			"-h | --help          Print this message\n"
+			"-o | --output        Set JPEG output filename\n"
+			"-q | --quality       Set JPEG quality (0-100)\n"
+			"-m | --mmap          Use memory mapped buffers\n"
+			"-r | --read          Use read() calls\n"
+			"-u | --userptr       Use application allocated buffers\n"
+			"-W | --width         Set image width\n"
+			"-H | --height        Set image height\n"
+			"-I | --interval      Set frame interval (fps) (-1 to skip)\n"
+			"-c | --continuous    Do continous capture, stop with SIGINT.\n"
+			"-v | --version       Print version\n"
+			"",
+			argv[0]);
+}
 
-static const char short_options [] = "d:ho:q:mruW:H:I:vc";
+static const char short_options[] = "d:ho:q:mruW:H:I:vc";
 
 static const struct option
-long_options [] = {
-	{ "device",     required_argument,      NULL,           'd' },
-	{ "help",       no_argument,            NULL,           'h' },
-	{ "output",     required_argument,      NULL,           'o' },
-	{ "quality",    required_argument,      NULL,           'q' },
-	{ "mmap",       no_argument,            NULL,           'm' },
-	{ "read",       no_argument,            NULL,           'r' },
-	{ "userptr",    no_argument,            NULL,           'u' },
-	{ "width",      required_argument,      NULL,           'W' },
-	{ "height",     required_argument,      NULL,           'H' },
-	{ "interval",   required_argument,      NULL,           'I' },
-	{ "version",	no_argument,		NULL,		'v' },
-	{ "continuous",	no_argument,		NULL,		'c' },
-	{ 0, 0, 0, 0 }
-};
-
+	long_options[] = {
+		{"device", required_argument, NULL, 'd'},
+		{"help", no_argument, NULL, 'h'},
+		{"output", required_argument, NULL, 'o'},
+		{"quality", required_argument, NULL, 'q'},
+		{"mmap", no_argument, NULL, 'm'},
+		{"read", no_argument, NULL, 'r'},
+		{"userptr", no_argument, NULL, 'u'},
+		{"width", required_argument, NULL, 'W'},
+		{"height", required_argument, NULL, 'H'},
+		{"interval", required_argument, NULL, 'I'},
+		{"version", no_argument, NULL, 'v'},
+		{"continuous", no_argument, NULL, 'c'},
+		{0, 0, 0, 0}};
 
 //=======================================================================================//
 //=========================Debut Modification============================================//
 //=======================================================================================//
 
-
-
 char func(int sockfd, const struct sockaddr_in cliaddr)
 {
-    int max = 10;
-    char buff[1] = "0";
-    char buff_tot[max];
+	int max = 10;
+	char buff[1] = "0";
+	char buff_tot[max];
 
-    int len, n;
-		len = sizeof(cliaddr);  //len is value/resuslt
-		n = recvfrom(sockfd, (char *)buff_tot, strlen(buff_tot),
-	        	        0, ( struct sockaddr *) &cliaddr,
-       			        	&len);
-    buff_tot[n] = '\0';
-    printf("commande = %c\n", buff_tot[0]);
-    return buff_tot[0];
-
+	int len, n;
+	len = sizeof(cliaddr); //len is value/resuslt
+	n = recvfrom(sockfd, (char *)buff_tot, strlen(buff_tot),
+				 0, (struct sockaddr *)&cliaddr,
+				 &len);
+	buff_tot[n] = '\0';
+	printf("commande = %c\n", buff_tot[0]);
+	return buff_tot[0];
 }
 
+void sig_handler(sig_t s)
+{
+	close(sockfd);
+	printf("Good bye see you soon %d\n", s);
+	exit(1);
+}
 
+void takePicture()
+{
+	// open and initialize device
 
-void takePicture(){
-  // open and initialize device
-
-
-	int max_name_len = snprintf(NULL,0,continuousFilenameFmt,jpegFilename,UINT32_MAX,INT64_MAX);
+	int max_name_len = snprintf(NULL, 0, continuousFilenameFmt, jpegFilename, UINT32_MAX, INT64_MAX);
 	jpegFilenamePart = jpegFilename;
-	jpegFilename = calloc(max_name_len+1,sizeof(char));
-	strcpy(jpegFilename,jpegFilenamePart);
+	jpegFilename = calloc(max_name_len + 1, sizeof(char));
+	strcpy(jpegFilename, jpegFilenamePart);
 
 	deviceOpen();
 	deviceInit();
@@ -928,75 +989,74 @@ void takePicture(){
 	deviceClose();
 }
 
-
 int sendPicture(int sockfd, const struct sockaddr_in cliaddr)
 {
 
-    printf("on evoie l'image %s\n",jpegFilename);
-    FILE *photo = fopen(jpegFilename,"r");
-    printf("file desc\n");
-    fseek(photo, 0, SEEK_END);
-    int picture_size = ftell(photo);
-    fseek(photo, 0, SEEK_SET);
-    printf("Picture Size %d\n", picture_size);
-    char buffer_photo [picture_size];
-    fread(buffer_photo,1,picture_size,photo);
+	printf("on evoie l'image %s\n", jpegFilename);
+	FILE *photo = fopen(jpegFilename, "r");
+	printf("file desc\n");
+	fseek(photo, 0, SEEK_END);
+	int picture_size = ftell(photo);
+	fseek(photo, 0, SEEK_SET);
+	printf("Picture Size %d\n", picture_size);
+	char buffer_photo[picture_size];
+	fread(buffer_photo, 1, picture_size, photo);
 
-    int len;
-    len = sizeof(cliaddr);  //len is value/resuslt
+	int len;
+	len = sizeof(cliaddr); //len is value/resuslt
 
-    sendto(sockfd, buffer_photo, sizeof(buffer_photo),0, (struct sockaddr*) &cliaddr, len);
-    printf("Picture Size %d\n", picture_size);
-/*
+	sendto(sockfd, buffer_photo, sizeof(buffer_photo), 0, (struct sockaddr *)&cliaddr, len);
+	printf("Picture Size %d\n", picture_size);
+	/*
 
 	if(jpegFilenamePart != 0){
 		free(jpegFilename);
 	}
 */
-
 }
-
 
 //====Fonction de choix
 int app(int sockfd, const struct sockaddr_in cliaddr)
 {
 	char buffr[2];
 	char *buffs[MAX];
-	while(1){
+	while (1)
+	{
 		bzero(buffr, MAX);
 
 		// read the message from client and copy it in buffer
 		printf("Wait msg from client...\n");
 
 		int len, n;
-		len = sizeof(cliaddr);  //len is value/resuslt
+		len = sizeof(cliaddr); //len is value/resuslt
 		n = recvfrom(sockfd, (char *)buffr, MAX,
-				MSG_WAITALL, ( struct sockaddr *) &cliaddr,
-				&len);
+					 MSG_WAITALL, (struct sockaddr *)&cliaddr,
+					 &len);
 		buffr[n] = '\0';
 		printf("Client : %s\n", buffr);
 
 		int num = atoi(buffr);
-		switch(num){
+		switch (num)
+		{
 		case 1:
-		printf("Take picture\n");
-		takePicture();
-		sendPicture(sockfd, cliaddr);
-		break;
+			printf("Take picture\n");
+			takePicture();
+			sendPicture(sockfd, cliaddr);
+			break;
 
 		case 2:
-		printf ("SEND picture\n");
-		sendPicture(sockfd, cliaddr);
-		break;
+			printf("SEND picture\n");
+			sendPicture(sockfd, cliaddr);
+			break;
 
-		default :
+		default:
 
-		printf("Unknown Command\n");
-		break;
+			printf("Unknown Command\n");
+			break;
+		}
 	}
-  }
 
-		// send message to client
+	// send message to client
 
 	/*	sendto(sockfd, (const char *)buffs, strlen(buffs),
 			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
@@ -1005,73 +1065,62 @@ int app(int sockfd, const struct sockaddr_in cliaddr)
 	return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
 int main(int argc, char **argv)
 {
-  char buffer[30];
-  jpegFilename = "img.jpg";
+	signal(SIGINT, sig_handler);
+	char buffer[30];
+	jpegFilename = "img.jpg";
 
-  	// ======== Création du Socket
+	// ======== Création du Socket
 
+	
+	struct sockaddr_in servaddr, cliaddr;
 
-  	int sockfd;
-  	struct sockaddr_in servaddr, cliaddr;
+	// socket create and verification
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sockfd == -1)
+	{
+		printf("socket creation failed...\n");
+		exit(0);
+	}
+	else
+		printf("Socket successfully created..\n");
+	bzero(&servaddr, sizeof(servaddr));
 
-  	// socket create and verification
-  	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-  	if (sockfd == -1) {
-  		printf("socket creation failed...\n");
-  		exit(0);
-  	}
-  	else
-  		printf("Socket successfully created..\n");
-  	bzero(&servaddr, sizeof(servaddr));
+	// assign IP, PORT
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port = htons(PORT);
 
-  	// assign IP, PORT
-  	servaddr.sin_family = AF_INET;
-  	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  	servaddr.sin_port = htons(PORT);
+	// Binding newly created socket to given IP and verification
+	if ((bind(sockfd, (SA *)&servaddr, sizeof(servaddr))) != 0)
+	{
+		printf("socket bind failed...\n");
+		exit(0);
+	}
+	else
+		printf("Socket successfully binded..\n");
 
-  	// Binding newly created socket to given IP and verification
-  	if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
-  		printf("socket bind failed...\n");
-  		exit(0);
-  	}
-  	else
-  		printf("Socket successfully binded..\n");
+	int len, n;
 
+	len = sizeof(cliaddr); //len is value/resuslt
 
-  	int len, n;
+	n = recvfrom(sockfd, (char *)buffer, MAX,
+				 MSG_WAITALL, (struct sockaddr *)&cliaddr,
+				 &len);
 
-  	len = sizeof(cliaddr);  //len is value/resuslt
+	buffer[n] = '\0';
+	printf("Client : %s\n", buffer);
 
-  	n = recvfrom(sockfd, (char *)buffer, MAX,
-  			MSG_WAITALL, ( struct sockaddr *) &cliaddr,
-  			&len);
+	char *hello = "Hello from server";
+	sendto(sockfd, (const char *)hello, strlen(hello),
+		   MSG_CONFIRM, (const struct sockaddr *)&cliaddr,
+		   len);
+	printf("Hello message sent.\n");
 
-  	buffer[n] = '\0';
-  	printf("Client : %s\n", buffer);
+	// Function
+	app(sockfd, cliaddr);
 
-  	char *hello = "Hello from server";
-  	sendto(sockfd, (const char *)hello, strlen(hello),
-  			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
-  			len);
-  	printf("Hello message sent.\n");
-
-  	// Function
-  	app(sockfd, cliaddr);
-
-
-
-	close (sockfd);
+	close(sockfd);
 	return 0;
 }
