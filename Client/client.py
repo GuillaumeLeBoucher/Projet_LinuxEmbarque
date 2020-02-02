@@ -1,73 +1,98 @@
 import socket
 import numpy as np
 import cv2
+import os
+import inspect
 import json
-
-#test
+import time
 
 UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
-
 print("UDP target IP: ", UDP_IP)
 print ("UDP target PORT: ", UDP_PORT)
-
+JSON_FILE = "./../App-Web/src/app/image-detail/shared/data.json"
+PATH_PREFIX = "./../App-Web/src/assets/img/"
 monSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
 
 #====     Message d'initialisation au serveur ========
 
 requete = "Init OK"
 monSocket.sendto(requete.encode(), (UDP_IP, UDP_PORT))
-#On passe le JSON dans l'état 3, la pi est connectée, on est en attente
 
 #==== Reception message de réponse du serveur ========
 
 reponse, adr = monSocket.recvfrom(1024)
 print("Reponse serveur : ", reponse)
 
+#modifier le Json pour communique l'etat de la connection au serveur
+with open(JSON_FILE, "r") as f:
+    dico = json.load(f)
+    dico["Etat"] = "1"
+with open(JSON_FILE, "w") as f:
+    json.dump(dico, f)
+
+#Fonctions
+
+def sendRequest(buf):
+    """Envoie le contenu de buff au serveur 
+    """
+    monSocket.sendto(buf.encode(), (UDP_IP, UDP_PORT))
+    
+def receiveImage(name):
+    """
+    Reception de l'image
+    """
+    msg_recu, adr = monSocket.recvfrom(500000)
+    print('Image recu taille : ', str(len(msg_recu)))
+    nparr = np.fromstring(msg_recu, np.uint8)
+    img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    cv2.imwrite(PATH_PREFIX + name +'.jpg',img_np)     
+
+def veille():
+    input_client = "0"
+    while input_client != "1":
+        input_client = input(" Quelle commande voulez-vous ?:\n Entrée 1 pour prendre une photos et l'envoyer vers votre gallerie ").strip()  
+
+
+    with open(JSON_FILE, "r") as f:
+        dico = json.load(f)
+    
+    #send msg to serveur :
+    sendRequest("1")
+    NbPhotos = len(dico["PhotoPath"])
+    pictName = input("Entrer un nom pour votre photo ")
+    if not pictName :
+        pictName = "image" + str(NbPhotos + 1)
+    pictDescription = input("Entrez une description pous votre photo (obtionnel faites entrer sinon)")
+    if not pictDescription:
+        pictDescription = "Pas de description"
+    receiveImage(pictName)
+    dico["PhotoPath"].append({'id': NbPhotos+1, 'caption': pictDescription, 'url': 'assets/img/' + pictName + '.jpg'})
+    
+    with open(JSON_FILE, "w") as f:
+        json.dump(dico, f)
+
+if __name__ == "__main__" :
+    veille()
+
 #==== Saisie de la requête au clavier et suppression des espaces des 2 côtés
 
-requete = input(' Quelle commande voulez-vous ?: ').strip()
-print("Ordre serveur : ",requete)
-monSocket.sendto(requete.encode(), (UDP_IP, UDP_PORT))
+  
+        
+#requete = input(' Quelle commande voulez-vous ?: ').strip()
+#print("Ordre serveur : ",requete)
+#monSocket.sendto(requete.encode(), (UDP_IP, UDP_PORT))
 
 # réception et affichage de la réponse
 #buf_size, adr = monSocket.recvfrom(1024)
 #print("Reponse socket")
 #print ("=> %s" % buf_size)
 
-
- #====  Ecriture dans le JSON a integrer dans la partie reception========
-
-#On récupère les données du JSON existant 
-with open("./App-Web/src/app/image-detail/shared/data.json", "r") as f_read:
-    dico = json.load(f_read)
-print(dico)
-#Enregistrement du nouveau contenu au bon endroit Faire des inputs pour category, caption et name qu'on met dans l'url
-NbPhotos = len(dico["PhotoPath"])
-Listephotos = dico["PhotoPath"]
-Listephotos.append({'id': NbPhotos+1, 'category': 'NewCat', 'caption': 'Test Json for NewCat', 'url': 'assets/img/test_01.jpg'})
-dico["PhotoPath"] = Listephotos
-print (dico)
-#Sauvegarde (écrasement)
-with open("./App-Web/src/app/image-detail/shared/data.json", "w") as f_write:
-    json.dump(dico, f_write)
-
 #====  Réception de la photo ========
 
-# if (requete == 1):
-    # on ouvre le JSON et on modifie l'état pour le passer de 0 à 1. On a envoyer une demande de photo, phase d'émission
-
-
-if (requete == 2):
-    #Changer l'etat dans le JSON on est dans l'état reception
-    #Faire un input pour demander le nom et aller mettre la photo dans assets, img...
-    # de plus on modifie l'état dans le JSON, on passe de 1 à 2, phase de reception
-    msg_recu, adr = monSocket.recvfrom(500000)
-    print('Image ' + ' recu' + 'taille :' + str(len(msg_recu)))
-    nparr = np.fromstring(msg_recu, np.uint8)
-    img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    cv2.imwrite('image3' + '.jpg',img_np)
-    #reception terminer on repasse de 2 à 3, ou 3 est l'état en attente
-
-#if (requete == 3):
-    # On ferme la connexion, on repasse l'état de 3 à 0 dans le JSON
+#if (requete == "2"): 
+#    msg_recu, adr = monSocket.recvfrom(500000)
+#    print('Image ' + ' recu' + 'taille :' + str(len(msg_recu)))
+#    nparr = np.fromstring(msg_recu, np.uint8)
+#    img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+#    cv2.imwrite('./../App-Web/src/assets/img/image3' + '.jpg',img_np)
