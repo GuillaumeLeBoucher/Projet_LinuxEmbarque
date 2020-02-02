@@ -40,7 +40,7 @@
         </div>
     </div>
 </div>
-<div class="row" style="padding-top: 110px;">
+<div class="row" style="padding-top: 70px;">
     <ul id="thumbnailsList">
         <li *ngFor="let image of (visibleImages | imageFilter:filterBy)">
             <a [routerLink]="['/image', image.id]">
