@@ -912,12 +912,15 @@ void takePicture(){
 	deviceInit();
 
 	// start capturing
+	printf("Capture START\n");
 	captureStart();
 
 	// process frames
+	printf("Process frames\n");
 	mainLoop();
 
 	// stop capturing
+	printf("Capture STOP\n");
 	captureStop();
 
 	// close device
@@ -957,35 +960,40 @@ int sendPicture(int sockfd, const struct sockaddr_in cliaddr)
 //====Fonction de choix
 int app(int sockfd, const struct sockaddr_in cliaddr)
 {
-int connfd;
-char buff = '0';
-buff = func(sockfd, cliaddr);
+	char buffr[2];
+	char *buffs[MAX];
+	while(1){
+		bzero(buffr, MAX);
 
-        	// read the message from client and copy it in buffer
+		// read the message from client and copy it in buffer
 		printf("Wait msg from client...\n");
 
+		int len, n;
+		len = sizeof(cliaddr);  //len is value/resuslt
+		n = recvfrom(sockfd, (char *)buffr, MAX,
+				MSG_WAITALL, ( struct sockaddr *) &cliaddr,
+				&len);
+		buffr[n] = '\0';
+		printf("Client : %s\n", buffr);
 
-		printf("Commande Client : %s\n", buff);
+		int num = atoi(buffr);
+		switch(num){
+		case 1:
+		printf("Take picture\n");
+		takePicture();
+		sendPicture(sockfd, cliaddr);
+		break;
 
+		case 2:
+		printf ("SEND picture\n");
+		sendPicture(sockfd, cliaddr);
+		break;
 
-    while (buff != END){
+		default :
 
-  		switch(buff){
-  			case TAKE:
-  				printf("Take picture\n");
-          takePicture();
-  				break;
-
-  			case SEND:
-  				printf ("SEND picture\n");
-  				sendPicture(sockfd, cliaddr);
-  				break;
-
-  			default :
-
-  				printf("Unknown Command\n");
-  				break;
-  		}
+		printf("Unknown Command\n");
+		break;
+	}
   }
 
 		// send message to client
