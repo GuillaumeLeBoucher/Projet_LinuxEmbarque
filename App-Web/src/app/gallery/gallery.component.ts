@@ -30,7 +30,7 @@ export class GalleryComponent implements OnInit {
 
  
   
-  TakePicFonction(){
+  test(){
     console.log("coucou")
   }
 }

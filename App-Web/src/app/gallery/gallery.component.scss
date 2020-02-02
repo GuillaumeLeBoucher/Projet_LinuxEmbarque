@@ -46,6 +46,13 @@ li{
             margin-bottom: 10px;
             cursor: default;
         }
+        .connected-disabled{
+            background-color: gray !important;
+            color: black;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            cursor: default;
+        }
     }
     .button-state-2{
         text-align:center;
@@ -53,6 +60,13 @@ li{
         .action{
             background-color: orange !important;
             color: white !important;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            cursor: default;
+        }
+        .action-disabled{
+            background-color: gray !important;
+            color: black;
             margin-right: 10px;
             margin-bottom: 10px;
             cursor: default;

@@ -3,23 +3,44 @@
     <strong >Click Here to take a new picture : </strong>
     <img src="https://img.icons8.com/dusk/64/000000/compact-camera.png" ngbTooltip="Take a picture with the PI camera">
 </div> -->
-
-
 <div class="state-button-row">
-    <p strong>State of the PI</p>
-    <div class="button-state-0" matTooltip="The python client is not connected with the PI server">
-        <!-- <p>hhhh</p> -->
-        <button mat-fab class="no-connected" disabled>0</button>
+    <p strong>State of the PI : {{visibleEtat}}</p>
+    <div *ngIf="visibleEtat == 0">
+        <div class="button-state-0" matTooltip="The python client is not connected with the PI server">
+            <button mat-fab class="no-connected" disabled>0</button>
+        </div>
+        <div class="button-state-1">
+            <button mat-fab class="connected-disabled" disabled>1</button>
+        </div>
+        <div class="button-state-2" >
+            <button mat-fab class="action-disabled" disabled>2</button>
+        </div>
     </div>
-    <div class="button-state-1" matTooltip="The python client is connected with the PI server and ready to take a picture">
-        <!-- <p>Text over buttossssssssssssssssn 1</p> -->
-        <button mat-fab class="connected" disabled>1</button>
+    <div *ngIf="visibleEtat == 1">
+        <div class="button-state-0">
+            <button mat-fab class="no-connected-disabled" disabled>0</button>
+        </div>
+        <div class="button-state-1"
+            matTooltip="The python client is connected with the PI server and ready to take a picture">
+            <button mat-fab class="connected" disabled>1</button>
+        </div>
+        <div class="button-state-2" >
+            <button mat-fab class="action-disabled" disabled>2</button>
+        </div>
     </div>
-    <div class="button-state-2" matTooltip="The client and the server are opperating">
-        <button mat-fab class="action" disabled>2</button>
+    <div *ngIf="visibleEtat == 2">
+        <div class="button-state-0">
+            <button mat-fab class="no-connected-disabled" disabled>0</button>
+        </div>
+        <div class="button-state-1">
+            <button mat-fab class="connected-disabled" disabled>1</button>
+        </div>
+        <div class="button-state-2" matTooltip="The client and the server are opperating">
+            <button mat-fab class="action" disabled>2</button>
+        </div>
     </div>
 </div>
-<div class="row" style="padding-top: 50px;">
+<div class="row" style="padding-top: 110px;">
     <ul id="thumbnailsList">
         <li *ngFor="let image of (visibleImages | imageFilter:filterBy)">
             <a [routerLink]="['/image', image.id]">

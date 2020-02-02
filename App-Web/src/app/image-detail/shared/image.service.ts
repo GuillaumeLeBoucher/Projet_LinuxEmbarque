@@ -20,6 +20,7 @@ export class ImageService{
         return IMAGES.slice(0).find(image => image.id ==id)
     } 
     getEtat(){
+        console.log(ETAT);
         return this.visibleEtat= ETAT
     }
 } 
