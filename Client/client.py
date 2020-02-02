@@ -2,6 +2,7 @@ import socket
 import numpy as np
 import cv2
 import os
+import signal
 import inspect
 import json
 import time
@@ -44,6 +45,10 @@ with open(JSON_FILE, "w") as f:
     json.dump(dico, f)
 
 #Fonctions
+
+def signal_handler(sig, frame):
+    sys.exit(0)
+
 
 def sendRequest(buf):
     """Envoie le contenu de buff au serveur 
@@ -100,8 +105,8 @@ def veille():
         json.dump(dico, f)
 
 if __name__ == "__main__" :
-
-
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.pause()
     veille()
 
 #==== Saisie de la requête au clavier et suppression des espaces des 2 côtés
