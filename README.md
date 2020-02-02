@@ -220,7 +220,7 @@ Le serveur sera déployé à l'adresse : http://localhost:4200
 # Amélioration possible du système
 
 
- **Interface graphique App-Web**
+## Interface graphique App-Web
 
  <p style="text-align:justify";>
 
@@ -230,6 +230,8 @@ Enfin il est toujours possible d'améliorer cette petite application afin de la 
 
 </p>
 
- **Client Python**
 
-**Serveur C**
+
+## Serveur C
+
+Il aurait été plus intéressant de réalisé un serveur modulaire pas soucis de lisibilité du code. En effet, nous avons directement inclus notre code dans la librairie *v4l2grab* au lieu de l'importer directement via des headers. Cela permet de rendre le code beaucoup plus lisible et compréhensif.
