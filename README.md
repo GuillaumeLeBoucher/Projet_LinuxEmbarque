@@ -149,11 +149,57 @@ It may take few seconds
 ## Lancer l'afficheur node :
 npm start -->
 
-* **Interface graphique App-Web** :
+ **Interface graphique App-Web** : Pour initialiser l'application web, il faut au préalable installer **nodeJS** et **npm**. Voici les étapes à suivres pour une distrib Ubuntu 18.04(d'autres modes d'installation disponnible sur ce site : https://linuxize.com/post/how-to-install-node-js-on-ubuntu-18.04/)   
 
-* **Lancement client** :
+Activez le dépôt NodeSource en exécutant le curl suivant en tant qu'utilisateur ayant les privilèges sudo :
+``` 
+curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+```
+
+
+La commande ajoutera la clé de signature NodeSource à votre système, créera un fichier de dépôt des sources apt, installera tous les paquets nécessaires et rafraîchira le cache apt.
+
+Une fois que le dépôt NodeSource est activé, installez Node.js et npm en tapant :
+
+``` 
+sudo apt install nodejs
+``` 
+Le paquet nodejs contient à la fois les binaires node et npm.
+
+Vérifiez que le Node.js et le npm ont été installés avec succès en regardant leurs versions :
+``` 
+node --version
+npm --version
+``` 
+Ensuite, une fois npm installer il faut run npm install afin d'installer toutes les dépendances du projet :
+``` 
+npm install
+``` 
+On peut ensuite lancer l'interface graphique en éxécutant la commande :
+``` 
+npm start
+``` 
+Le serveur sera déployé à l'adresse : http://localhost:4200
+
+ **Client Python** :
+
+  **Serveur C** :
 
 ### Commande à lancer à partir du terminal client
 
 * Commande pour prendre une photo :
 * Commande pour recevoir la photo :
+
+
+## Amélioration possible du système
+
+
+ **Interface graphique App-Web**
+ 
+ Au départ nous avions comme objectif de prendre la photo via l'interface graphique directemment et en communiquant à l'aide du *data.json*. Cependant après de nombreuses recherches nous avons du abandonné cette idée car il est impossible de **facilement** communiquer entre du front-end et le disque local où sont situées nos photos. Il serait possible de le faire via 2 méthodes. La première serait une communication Websocket entre l'App-Web et le client Python, on aurait donc un échange constant d'informations entre les deux et donc on pourrais communiquer un ordre pour la prise de photo. La deuxième solution serait de créer une base de données (MongoDB par exemple) et de stocker et interroger la base pour chaque action.
+
+Enfin il est toujours possible d'améliorer cette petite application afin de la rendre plus visuelle, etc.
+
+ **Client Python**
+
+**Serveur C**
