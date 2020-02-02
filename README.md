@@ -203,3 +203,5 @@ Enfin il est toujours possible d'améliorer cette petite application afin de la 
  **Client Python**
 
 **Serveur C**
+
+Il aurait été plus intéressant de réalisé un serveur modulaire pas soucis de lisibilité du code. En effet, nous avons directement inclus notre code dans la librairie *v4l2grab* au lieu de l'importer directement via des headers. Cela permet de rendre le code beaucoup plus lisible et compréhensif.
