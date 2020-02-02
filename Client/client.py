@@ -6,14 +6,26 @@ import inspect
 import json
 import time
 
-UDP_IP = "127.0.0.1"
+JSON_FILE = "./../App-Web/src/app/image-detail/shared/data.json"
+PATH_PREFIX = "./../App-Web/src/assets/img/"
+with open(JSON_FILE, "r") as f:
+    dico = json.load(f)
+    dico["Etat"] = "0"
+with open(JSON_FILE, "w") as f:
+    json.dump(dico, f)
+target_ip = input("Rentrer l'adresse IP de la raspbery : \n")
+while len(target_ip) < 4 :
+    target_ip = input("Rentrer l'adresse IP de la raspberry : \n")
+
+UDP_IP = target_ip
 UDP_PORT = 5005
 print("UDP target IP: ", UDP_IP)
 print ("UDP target PORT: ", UDP_PORT)
-JSON_FILE = "./../App-Web/src/app/image-detail/shared/data.json"
-PATH_PREFIX = "./../App-Web/src/assets/img/"
-monSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
-
+try :
+    monSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+except error as e:
+    print("ECHEC CONNECTION\n redémarrer le client pour changer l'adresse IP")
+    exit(0)
 #====     Message d'initialisation au serveur ========
 
 requete = "Init OK"
@@ -51,28 +63,45 @@ def receiveImage(name):
 def veille():
     input_client = "0"
     while input_client != "1":
-        input_client = input(" Quelle commande voulez-vous ?:\n Entrée 1 pour prendre une photos et l'envoyer vers votre gallerie ").strip()  
+        input_client = input(" Quelle commande voulez-vous ?:\n Entrez 1 pour prendre une photos et l'envoyer vers votre gallerie\n").strip()  
 
 
     with open(JSON_FILE, "r") as f:
         dico = json.load(f)
     
     #send msg to serveur :
+    with open(JSON_FILE, "r") as f:
+        dico = json.load(f)
+        dico["Etat"] = "2"
+    with open(JSON_FILE, "w") as f:
+        json.dump(dico, f)
+
+
     sendRequest("1")
+
     NbPhotos = len(dico["PhotoPath"])
-    pictName = input("Entrer un nom pour votre photo ")
+    pictName = input("Entrer un nom pour votre photo :\n").strip()
     if not pictName :
         pictName = "image" + str(NbPhotos + 1)
-    pictDescription = input("Entrez une description pous votre photo (obtionnel faites entrer sinon)")
+    pictDescription = input("Entrez une description pous votre photo (obtionnel faites entrer sinon) :\n")
     if not pictDescription:
         pictDescription = "Pas de description"
     receiveImage(pictName)
+   
+    with open(JSON_FILE, "r") as f:
+        dico = json.load(f)
+        dico["Etat"] = "1"
+    with open(JSON_FILE, "w") as f:
+        json.dump(dico, f)
+
     dico["PhotoPath"].append({'id': NbPhotos+1, 'caption': pictDescription, 'url': 'assets/img/' + pictName + '.jpg'})
     
     with open(JSON_FILE, "w") as f:
         json.dump(dico, f)
 
 if __name__ == "__main__" :
+
+
     veille()
 
 #==== Saisie de la requête au clavier et suppression des espaces des 2 côtés
