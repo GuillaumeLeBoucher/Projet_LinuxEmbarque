@@ -10,6 +10,9 @@ import { ImageDetailComponent } from './image-detail/image-detail.component';
 import { ImageService } from './image-detail/shared/image.service';
 import {ImageFilterPipe} from './image-detail/shared/filter.pipe'
 import { RouterModule } from '@angular/router';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import {MatButtonModule} from '@angular/material'
+import {MatTooltipModule} from '@angular/material'
 
 @NgModule({
   declarations: [
@@ -23,7 +26,14 @@ import { RouterModule } from '@angular/router';
     BrowserModule,
     NgbModule,
     NgbAlertModule,
-    RouterModule.forRoot(appRoutes)
+    RouterModule.forRoot(appRoutes),
+    NoopAnimationsModule,
+    MatButtonModule,
+    MatTooltipModule
+  ],
+  exports: [
+    MatButtonModule,
+    MatTooltipModule
   ],
   providers: [ImageService, ImageFilterPipe],
   bootstrap: [AppComponent]

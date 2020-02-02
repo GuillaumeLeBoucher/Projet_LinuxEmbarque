@@ -1,17 +1,30 @@
 <h2>{{title}}</h2>
-<div (click)="TakePicFonction()" class="IconPic"> 
+<!-- <div (click)="TakePicFonction()" class="IconPic"> 
     <strong >Click Here to take a new picture : </strong>
     <img src="https://img.icons8.com/dusk/64/000000/compact-camera.png" ngbTooltip="Take a picture with the PI camera">
+</div> -->
+
+
+<div class="state-button-row">
+    <p strong>State of the PI</p>
+    <div class="button-state-0" matTooltip="The python client is not connected with the PI server">
+        <!-- <p>hhhh</p> -->
+        <button mat-fab class="no-connected" disabled>0</button>
+    </div>
+    <div class="button-state-1" matTooltip="The python client is connected with the PI server and ready to take a picture">
+        <!-- <p>Text over buttossssssssssssssssn 1</p> -->
+        <button mat-fab class="connected" disabled>1</button>
+    </div>
+    <div class="button-state-2" matTooltip="The client and the server are opperating">
+        <button mat-fab class="action" disabled>2</button>
+    </div>
 </div>
-<div>
-    <p> Voici l'état de la camera : {{visibleEtat}}</p>
-</div>
-<div class="row">
+<div class="row" style="padding-top: 50px;">
     <ul id="thumbnailsList">
-        <li *ngFor= "let image of (visibleImages | imageFilter:filterBy)">
-            <a [routerLink] = "['/image', image.id]">
+        <li *ngFor="let image of (visibleImages | imageFilter:filterBy)">
+            <a [routerLink]="['/image', image.id]">
                 <img src="{{image.url}}" class="tn" width="200" height="160">
             </a>
         </li>
     </ul>
-</div> 
+</div>

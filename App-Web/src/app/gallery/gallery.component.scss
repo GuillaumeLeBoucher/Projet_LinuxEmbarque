@@ -11,7 +11,57 @@ li{
     border: 4px solid;
     box-shadow: #555 1px 1px 8px 1px;
 }
-.IconPic{
+.state-button-row{
     float: right;
-    cursor: pointer;
+    display: block;
+    text-align:center;
+    margin-right: 100px;
+    .button-state-0{
+        text-align:center;
+        display:inline-block;
+        .no-connected{
+            background-color: red !important;
+            color: white !important;
+            margin-right: 10px;
+            margin-left: 10px;
+            margin-bottom: 10px;
+            cursor: default;
+        }
+        .no-connected-disabled{
+            background-color: gray !important;
+            color: black;
+            margin-left: 10px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            cursor: default;
+        }
+    }
+    .button-state-1{
+        text-align:center;
+        display:inline-block;
+        .connected{
+            background-color: blue !important;
+            color: white !important;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            cursor: default;
+        }
+    }
+    .button-state-2{
+        text-align:center;
+        display:inline-block;
+        .action{
+            background-color: orange !important;
+            color: white !important;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            cursor: default;
+        }
+    }
+    border-style: solid;
+
+
+    // .mat-fab.mat-accent{
+    //     background-color: black;
+    // }
 }

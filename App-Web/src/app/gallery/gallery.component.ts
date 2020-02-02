@@ -12,7 +12,7 @@ declare var require: any;
   styleUrls: ['./gallery.component.scss']
 })
 export class GalleryComponent implements OnInit {
-  title ="Recent Photos";
+  title ="Photos took by the PI camera";
   visibleImages: any[] = [];
   visibleEtat:any ="";
   @Input() filterBy?: string = 'all'
