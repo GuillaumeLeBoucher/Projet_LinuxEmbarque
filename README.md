@@ -113,7 +113,7 @@ La signification du code couleur :
 * Prise photo et transmission : *leds bleue et rouge allumées*
 
 
-![alt text](Pictures/raspb.png)
+![alt text](Photos/raspb.png)
 
 
 
@@ -206,7 +206,7 @@ Notre système comporte 3 "états" de fonctionnement : l'état 0 lorsque le clie
 </p>
 
 
-![alt text](Pictures/State0.png)
+![alt text](Photos/State0.png)
 
 Ainsi, nous pourrons toujours visualiser les photos qui ont été prises précédemment, sans pour autant qu'il y ait de communications entre le client Python et la carte.
 
@@ -218,7 +218,7 @@ Lors que les première données d'initialisation entre le client Python et le se
 
 </p>
 
-![alt text](Pictures/State1.png)
+![alt text](Photos/State1.png)
 
 ### Prise d'une photo
 
@@ -228,7 +228,7 @@ L'utilisateur va ensuite pouvoir contrôler la prise de photo via le terminal. I
 
 </p>
 
-![alt text](Pictures/State2.png)
+![alt text](Photos/State2.png)
 
 <p style="text-align:justify";>
 
