@@ -80,7 +80,7 @@ gpu_mem=128
 ```
 
 
-## 3. Cross compilation des librairies du serveur serveur
+## 3. Cross compilation des librairies du serveur
 
 Pour récupérer les images de la caméra sur la Raspberry, nous nous basons sur l'API V4L qui est une API vidéo dédiée aux systèmes Linux. Ainsi, dans le docker, pour l'installer et la configurer :
 
@@ -253,9 +253,9 @@ sh lauch.sh
   ```
 
   * Lancement de l'interface graphique
-```
-npm start
-```
+  ```
+  npm start
+  ```
 Le serveur sera déployé à l'adresse : http://localhost:4200
 Il faut ensuite suivre les instructions du terminal et se laisser guider pour la prise de photo.
 
