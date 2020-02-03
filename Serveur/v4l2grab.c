@@ -69,7 +69,7 @@
 #include "yuv.h"
 
 #define MAX 1024
-#define PORT 5005
+#define PORT 8089
 int sockfd;
 #define TAKE 2
 #define SEND 1
@@ -936,6 +936,14 @@ static const struct option
 //=======================================================================================//
 //=========================Debut Modification============================================//
 //=======================================================================================//
+int led(char status) 
+{ 
+	FILE * fd = NULL; 
+	fd = fopen("mypipe.txt", "w"); 
+	fputc(status,fd);
+	fclose(fd);
+	return 0; 
+}
 
 char func(int sockfd, const struct sockaddr_in cliaddr)
 {
@@ -955,8 +963,10 @@ char func(int sockfd, const struct sockaddr_in cliaddr)
 
 void sig_handler(sig_t s)
 {
+	led('3');
+	led('0');
 	close(sockfd);
-	printf("Good bye see you soon %d\n", s);
+	printf("Good bye see you soon\n");
 	exit(1);
 }
 
@@ -1007,12 +1017,6 @@ int sendPicture(int sockfd, const struct sockaddr_in cliaddr)
 
 	sendto(sockfd, buffer_photo, sizeof(buffer_photo), 0, (struct sockaddr *)&cliaddr, len);
 	printf("Picture Size %d\n", picture_size);
-	/*
-
-	if(jpegFilenamePart != 0){
-		free(jpegFilename);
-	}
-*/
 }
 
 //====Fonction de choix
@@ -1040,13 +1044,25 @@ int app(int sockfd, const struct sockaddr_in cliaddr)
 		{
 		case 1:
 			printf("Take picture\n");
+			led('2');
 			takePicture();
 			sendPicture(sockfd, cliaddr);
+			led('1');
 			break;
 
 		case 2:
 			printf("SEND picture\n");
 			sendPicture(sockfd, cliaddr);
+			break;
+		case 3:
+			printf("Good Bye client");
+			led('1');
+			break;
+
+		case 4:
+			printf("Good Bye client");
+			led('0');
+			exit(1);
 			break;
 
 		default:
@@ -1056,18 +1072,19 @@ int app(int sockfd, const struct sockaddr_in cliaddr)
 		}
 	}
 
-	// send message to client
-
-	/*	sendto(sockfd, (const char *)buffs, strlen(buffs),
-			MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
-			len); */
-
 	return 0;
 }
+
+
+ 
 
 int main(int argc, char **argv)
 {
 	signal(SIGINT, sig_handler);
+	
+	// Creating the named file(FIFO) 
+	led('0');
+
 	char buffer[30];
 	jpegFilename = "img.jpg";
 
@@ -1100,7 +1117,8 @@ int main(int argc, char **argv)
 	}
 	else
 		printf("Socket successfully binded..\n");
-
+	
+	led('1');
 	int len, n;
 
 	len = sizeof(cliaddr); //len is value/resuslt
@@ -1122,5 +1140,5 @@ int main(int argc, char **argv)
 	app(sockfd, cliaddr);
 
 	close(sockfd);
-	return 0;
+	exit(1);
 }
