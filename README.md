@@ -11,6 +11,9 @@ Le groupe de projet est composé de :
 * Aurélien Grenier
 * Guillaume Le Boucher
 
+![alt text](image.jpg)
+
+
 
 ## Sujet du Projet
 
