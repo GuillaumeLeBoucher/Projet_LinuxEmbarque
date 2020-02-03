@@ -934,15 +934,15 @@ static const struct option
 		{0, 0, 0, 0}};
 
 //=======================================================================================//
-//=========================Debut Modification============================================//
+//=========================Debut Modifications ============================================//
 //=======================================================================================//
-int led(char status) 
-{ 
-	FILE * fd = NULL; 
-	fd = fopen("mypipe.txt", "w"); 
+int led(char status)
+{
+	FILE * fd = NULL;
+	fd = fopen("mypipe.txt", "w");
 	fputc(status,fd);
 	fclose(fd);
-	return 0; 
+	return 0;
 }
 
 char func(int sockfd, const struct sockaddr_in cliaddr)
@@ -952,7 +952,7 @@ char func(int sockfd, const struct sockaddr_in cliaddr)
 	char buff_tot[max];
 
 	int len, n;
-	len = sizeof(cliaddr); //len is value/resuslt
+	len = sizeof(cliaddr);
 	n = recvfrom(sockfd, (char *)buff_tot, strlen(buff_tot),
 				 0, (struct sockaddr *)&cliaddr,
 				 &len);
@@ -972,7 +972,7 @@ void sig_handler(sig_t s)
 
 void takePicture()
 {
-	// open and initialize device
+
 
 	int max_name_len = snprintf(NULL, 0, continuousFilenameFmt, jpegFilename, UINT32_MAX, INT64_MAX);
 	jpegFilenamePart = jpegFilename;
@@ -982,19 +982,18 @@ void takePicture()
 	deviceOpen();
 	deviceInit();
 
-	// start capturing
+
 	printf("Capture START\n");
 	captureStart();
 
-	// process frames
+
 	printf("Process frames\n");
 	mainLoop();
 
-	// stop capturing
+
 	printf("Capture STOP\n");
 	captureStop();
 
-	// close device
 	deviceUninit();
 	deviceClose();
 }
@@ -1076,21 +1075,21 @@ int app(int sockfd, const struct sockaddr_in cliaddr)
 }
 
 
- 
+
 
 int main(int argc, char **argv)
 {
 	signal(SIGINT, sig_handler);
-	
-	// Creating the named file(FIFO) 
+
+	// ======== Creating the named file(FIFO)
 	led('0');
 
 	char buffer[30];
 	jpegFilename = "img.jpg";
 
-	// ======== Création du Socket
+	// ======== Creating Socket
 
-	
+
 	struct sockaddr_in servaddr, cliaddr;
 
 	// socket create and verification
@@ -1117,8 +1116,8 @@ int main(int argc, char **argv)
 	}
 	else
 		printf("Socket successfully binded..\n");
-	
-	led('1');
+
+
 	int len, n;
 
 	len = sizeof(cliaddr); //len is value/resuslt
@@ -1129,7 +1128,7 @@ int main(int argc, char **argv)
 
 	buffer[n] = '\0';
 	printf("Client : %s\n", buffer);
-
+	led('1');
 	char *hello = "Hello from server";
 	sendto(sockfd, (const char *)hello, strlen(hello),
 		   MSG_CONFIRM, (const struct sockaddr *)&cliaddr,

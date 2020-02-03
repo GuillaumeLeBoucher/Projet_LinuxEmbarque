@@ -16,7 +16,7 @@ Le groupe de projet est composé de :
 
 L'intitulé du projet se situe à l'adresse suivante : [sujet](Sujet_Projet_Camera.md)
 
-L'objectif principal va être de mettre en place une caméra IP à l'aide d'une RPI3 puis de prendre des photos avec cette dernière en contrôlant son état.
+L'objectif principal est de mettre en place une caméra IP à l'aide d'une RPI3 puis de prendre des photos avec cette dernière en contrôlant son état.
 
 ## Fonctionnalités proposées par notre projet
 
@@ -26,6 +26,7 @@ L'objectif principal va être de mettre en place une caméra IP à l'aide d'une 
 
 
 Vous trouverez dans ce README les sections suivantes :
+
 
 *  **Configuration du système :** Cette section va expliquer l'ensemble des étapes nécessaires à la configuration de notre système. Ce dernier est composé de la RPI3, de la caméra et de l'interface graphique pour la visualisation. On y retrouvera donc une description des étapes : de la récupération de l'os, de la compilation des librairies, du flashage de la carte SD...
 
@@ -64,7 +65,7 @@ Puis ensuite flasher :
 
 `sudo dd if=sdcard.img of=/dev/sdb`
 
-Bien vérifier le chemin de la carte SD (utilisation de lsblk)
+Bien vérifier le chemin de la carte SD ( en s'aidant de lsblk par exemple).
 
 La carte SD possède donc deux partitions. Il faut ajouter dans le fichier
 `config.txt` de la première partition.
@@ -84,7 +85,7 @@ Pour récupérer les images de la caméra sur la Raspberry, nous nous basons sur
 
 `git pull https://github.com/GuillaumeLeBoucher/Projet_LinuxEmbarque`
 
-* Pour compiler la partie serveur on, va utiliser les autotools qui vont nous permettre d'adapter la compilation à notre cible embarquée :
+* Pour compiler la partie serveur on va utiliser les autotools qui vont nous permettre d'adapter la compilation à notre cible embarquée :
 
 ```
 cd Serveur
@@ -94,7 +95,26 @@ make
 make install
 
 ```
-## 4. Installation du client
+
+Il faut ensuite sortir du docker et copier le binaire `v4l2grab` ainsi que le fichier python led.py sur la Raspberry soit en ftp (avec Filezilla par exemple) soit en les copiant directement dans la bonne partition de la carte SD.
+
+## 4. Branchement leds de contrôle
+
+On utilise deux leds, une bleue et une rouge.
+Il faut brancher la borne + de la led bleue au GPIO 13 et celle de la led rouge sur le GPIO 11.
+
+La signification du code couleur :
+
+* Mise sous tension de la Raspberry : *aucune led allumée*
+* "Socket initialisé et binded", premières données échangées entre le serveur et le client (transmission en UDP donc pas de connexion) : *led bleue allumée*  
+* Prise photo et transmission : *leds bleue et rouge allumées*
+
+
+![alt text](Pictures/raspb.png)
+
+
+
+## 5. Installation du client
 
 <!-- [Install on Ubuntu](https://linuxize.com/post/how-to-install-node-js-on-ubuntu-18.04/)
 cd App-web
@@ -107,7 +127,8 @@ npm start -->
 
 <p style="text-align:justify";>
 
- **Interface graphique App-Web** : Pour initialiser l'application web, il faut au préalable installer **nodeJS** et **npm**. Voici les étapes à suivres pour une distribution Ubuntu 18.04(d'autres modes d'installation disponnible sur ce site : https://linuxize.com/post/how-to-install-node-js-on-ubuntu-18.04/)   
+ **Interface graphique App-Web** : Pour initialiser l'application web, il faut au préalable installer **nodeJS** et **npm**. Voici les étapes à suivre pour une distribution Ubuntu 18.04 (d'autres modes d'installation disponible sur ce site : https://linuxize.com/post/how-to-install-node-js-on-ubuntu-18.04/)   
+
 </p>
 
 Activez le dépôt NodeSource en exécutant le curl suivant en tant qu'utilisateur ayant les privilèges sudo :
@@ -139,16 +160,16 @@ npm install
 ```
 
 
-## 5. Informations sur l'interface de visualisation
+## 6. Informations sur l'interface de visualisation
 
 <p style="text-align:justify";>
 
  Nous avons décider d'utiliser une interface Angular car Guillaume l'a utilisée lors de son stage d'assistant ingénieur. Angular est un framework JavaScript dont la description est disponible ici : https://angular.io/features.  
-L'idée au départ était de placer le serveur web sur la Raspberry mais nous n'avons pas pu installer les librairies nécessaires sur la carte. De plus, un serveur AngularJS n'aurait pas été adapté du point de vue de l'embarqué car les librairies NodeJS (utilisées par AngularJS) sont très lourdes.
+L'idée initiale était de placer le serveur web sur la Raspberry mais nous n'avons pas pu installer les librairies nécessaires sur la carte. De plus, un serveur AngularJS n'aurait pas été adapté du point de vue de l'embarqué car les librairies NodeJS (utilisées par AngularJS) sont très lourdes.
 
 Cette interface a deux objectifs, visualiser les photos et visualiser l'état de la caméra. La page web développée suit le pattern Model-View-Controller et nous avons utilisé le SCSS en tant que préprocesseur CSS pour nos feuilles de style.
 
-L'élément principal de cette application web est le service, disponible dans image-detail, qui permet de récupérer les adresse des photos enregistrées sur le disque ainsi que l'état de la caméra. Ces infos ont au préalable été enregistrées dans un fichier JSON (data.json dans image-detail/shared) par le client python. Voici un exemple de ce *data.json* où on retrouve les urls des différentes images prises par la caméra ainsi que l'état de notre système:
+L'élément principal de cette application web est le service, disponible dans image-detail, qui permet de récupérer les adresse des photos enregistrées sur le disque ainsi que l'état de la caméra. Ces informations ont au préalable été enregistrées dans un fichier JSON (data.json dans image-detail/shared) par le client python. Voici un exemple de ce *data.json* où on retrouve les urls des différentes images prises par la caméra ainsi que l'état de notre système:
 
 </p>
 
@@ -169,41 +190,58 @@ Une fois récupéré, il s'agit de les afficher. L'interface propose  des foncti
 
 </p>
 
+
 # Utilisation du système
 
 ## Fonctionnement entre le serveur, le client et l'interface de visualisation
 
+### Initialisation
+
 <p style="text-align:justify";>
 
-Notre système a 3 états de fonctionnement : L'état 0 lorsque le client python et le serveur C présent sur la Raspberry ne sont pas connectés en UDP. Ainsi, si l'on lance l'interface graphique, l'état 0 sera indiqué sur la droite comme on peut le voir sur la photo ci-dessous:
+Notre système comporte 3 "états" de fonctionnement : l'état 0 lorsque le client python et le serveur C présent sur la Raspberry n'ont réalisé aucune transmission en UDP. Ainsi, si l'on lance l'interface graphique, l'état 0 sera indiqué sur la droite comme on peut le voir sur la photo ci-dessous:
 </p>
 
 
-![alt text](./State0.png)
+![alt text](Pictures/State0.png)
 
 Ainsi, nous pourrons toujours visualiser les photos qui ont été prises précédemment, sans pour autant qu'il y ait de communications entre le client Python et la carte.
 
-**Prise de photo :**
+### Premières données échangées
 
 <p style="text-align:justify";>
 
-Lors que la connection entre le client Python et le serveur est établie en UDP, on va venir modifier le *data.json* et en particulier la valeur de l'état via le client Python. L'application web Angular, qui est en écoute constante de ce JSON va donc update la view et afficher que notre système se trouve dans l'état 1 :
+Lors que les première données d'initialisation entre le client Python et le serveur ont été échangées en UDP, on va venir modifier le *data.json* et en particulier la valeur de l'état via le client Python. L'application web Angular, qui est en écoute constante de ce JSON va donc mettre à jour la view et indiquer que notre système se trouve dans l'état 1 :
 
 </p>
 
-![alt text](./State1.png)
+![alt text](Pictures/State1.png)
 
-L'utilisateur va ensuite pouvoir contrôler la prise de photo via le terminal. Il doit suivre les indications qui lui sont proposées afin de prendre une photo. Il sera invité à rentrer une légende pour son image. Dès que l'utilisateur rentre sa légende, le client envoie la requete au serveur et l'état de notre système passe à 2 :
+### Prise d'une photo
 
-![alt text](./State2.png)
+<p style="text-align:justify";>
 
-Dans cet état 2, le serveur va traiter la demande du client, puis commander la caméra afin de prendre la photo. Une fois la photo prise, le serveur envoie en premier lieu la taille du buffer au client pour la recomposition de l'image puis l'image elle même. Une fois reception, l'image est enregistré à un endroit prédéfinit que l'on inscrit dans le *data.json*. De plus on repasse le système dans l'état 1. L'image est donc visible dans la gallery.
+L'utilisateur va ensuite pouvoir contrôler la prise de photo via le terminal. Il doit suivre les indications qui lui sont proposées afin de prendre une photo. Il sera invité à rentrer une légende pour son image. Dès que l'utilisateur rentre sa légende, le client envoie la requête au serveur et l'état de notre système passe à 2 :
 
+</p>
+
+![alt text](Pictures/State2.png)
+
+<p style="text-align:justify";>
+
+Dans cet état 2, le serveur va traiter la demande du client, puis commander la caméra afin de prendre la photo. Une fois la photo prise, le serveur l'envoie au client. Une fois réceptionnée, l'image est enregistrée à un endroit prédéfinit que l'on inscrit dans le *data.json*. De plus on repasse le système dans l'état 1. L'image est donc visible dans la gallery.
+
+</p>
 
 ## Lancement du système
 
 * **Lancement du serveur :**
-Connection en ssh
+On peut lancer le serveur en lançant le script via une connexion en ssh ou une liaison série.
+
+```
+sh lauch.sh
+
+```
 
 * **Lancement du Client :**
   * Lancement du client python
@@ -216,17 +254,26 @@ Connection en ssh
 npm start
 ```
 Le serveur sera déployé à l'adresse : http://localhost:4200
+Il faut ensuite suivre les instructions du terminal et se laisser guider pour la prise de photo.
 
-# Amélioration possible du système
+**Commandes à rentrer dans le terminal**
+
+  - **1** : prendre une photos et l'envoyer vers votre gallerie
+  - **2** : renvoyer la dernière image prise
+  - **3** : fermer le client
+  - **4** : éteindre le serveur et fermer le client
+
+# Améliorations possibles du système
 
 
 ## Interface graphique App-Web
 
  <p style="text-align:justify";>
 
- Au départ nous avions comme objectif de prendre la photo via l'interface graphique directemment et en communiquant à l'aide du *data.json*. Cependant après de nombreuses recherches nous avons du abandonné cette idée car il est impossible de **facilement** communiquer entre du front-end et le disque local où sont situées nos photos. Il serait possible de le faire via 2 méthodes. La première serait une communication Websocket entre l'App-Web et le client Python, on aurait donc un échange constant d'informations entre les deux et donc on pourrais communiquer un ordre pour la prise de photo. La deuxième solution serait de créer une base de données (MongoDB par exemple) et de stocker et interroger la base pour chaque action.
+ Au départ nous avions comme objectif de prendre la photo via l'interface graphique directement en communiquant à l'aide du *data.json*. Cependant après de nombreuses recherches nous avons abandonné cette idée car il est impossible de communiquer **facilement** entre du front-end et le disque local où sont situées nos photos.   
+ Il serait possible de le faire via 2 méthodes. La première serait une communication Websocket entre l'App-Web et le client Python, on aurait donc un échange constant d'informations entre les deux et on pourrait communiquer un ordre pour la prise de photo. La deuxième solution serait de créer une base de données (MongoDB par exemple) et de stocker et interroger la base pour chaque action.
 
-Enfin il est toujours possible d'améliorer cette petite application afin de la rendre plus visuelle, etc.
+Enfin il est toujours possible d'améliorer cette petite application afin de la rendre plus visuelle...
 
 </p>
 
@@ -234,4 +281,8 @@ Enfin il est toujours possible d'améliorer cette petite application afin de la 
 
 ## Serveur C
 
-Il aurait été plus intéressant de réalisé un serveur modulaire pas soucis de lisibilité du code. En effet, nous avons directement inclus notre code dans la librairie *v4l2grab* au lieu de l'importer directement via des headers. Cela permet de rendre le code beaucoup plus lisible et compréhensif.
+ <p style="text-align:justify";>
+
+Il aurait été plus intéressant de réaliser un serveur modulaire par souci de lisibilité du code. En effet, nous avons directement inclus notre code dans la librairie *v4l2grab* au lieu de l'importer directement via des headers (ce qui nous a également permis de réutiliser les autotools fournis sans faire de modifications particulières). Cela aurait permis de rendre le code beaucoup plus lisible et compréhensif.
+
+</p>

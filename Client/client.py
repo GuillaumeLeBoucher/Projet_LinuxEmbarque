@@ -62,10 +62,10 @@ def quit():
 
 
 def sendRequest(buf):
-    """Envoie le contenu de buff au serveur 
+    """Envoie le contenu de buff au serveur
     """
     monSocket.sendto(buf.encode(), (UDP_IP, UDP_PORT))
-    
+
 def receiveImage(name):
     """
     Reception de l'image
@@ -74,16 +74,17 @@ def receiveImage(name):
     print('Image recu taille : ', str(len(msg_recu)))
     nparr = np.fromstring(msg_recu, np.uint8)
     img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    cv2.imwrite(PATH_PREFIX + name +'.jpg',img_np)     
+    cv2.imwrite(PATH_PREFIX + name +'.jpg',img_np)
 
 def veille():
     """Corps du programme
     Attend une entrée utilisateur :
+
+    - 1 pour prendre une photos et l'envoyer vers votre gallerie
+    - 2 pour renvoyer la derniere image prise
+    - 3 pour fermer le client
+    - 4 pour éteindre le serveur et fermer le client  """
     
-    - 1 pour prendre une photos et l'envoyer vers votre gallerie\n \
-    - 2 pour renvoyer la derniere image prise\n \
-    - 3 pour fermer le client\n \
-    - 4 pour éteindre le serveur et fermer le client\n").strip()     """
     running = True
     while running == True :
         input_client = "0"
@@ -93,13 +94,13 @@ Entrez :\n \
         - 1 pour prendre une photos et l'envoyer vers votre gallerie\n \
         - 2 pour renvoyer la derniere image prise\n \
         - 3 pour fermer le client\n \
-        - 4 pour éteindre le serveur et fermer le client\n").strip()  
+        - 4 pour éteindre le serveur et fermer le client\n").strip()
 
         sendRequest(input_client)
         if input_client == "3" or input_client =="4":
             running = False
 
-        if input_client == "1" or input_client == "2":        
+        if input_client == "1" or input_client == "2":
             with open(JSON_FILE, "r") as f:
                 dico = json.load(f)
                 dico["Etat"] = "2"
@@ -116,17 +117,16 @@ Entrez :\n \
             if not pictDescription:
                 pictDescription = "Pas de description"
             receiveImage(pictName)
-           
+
             with open(JSON_FILE, "r") as f:
                 dico = json.load(f)
             dico["Etat"] = "1"
 
             dico["PhotoPath"].append({'id': NbPhotos+1, 'caption': pictDescription, 'url': 'assets/img/' + pictName + '.jpg'})
-            
+
             with open(JSON_FILE, "w") as f:
                 json.dump(dico, f)
 
 if __name__ == "__main__" :
     signal.signal(signal.SIGINT, signal_handler)
     veille()
-
